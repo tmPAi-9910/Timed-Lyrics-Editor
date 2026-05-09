@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timed Lyrics Editor</title>
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #e9e9e9;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #cccccc;
+            --accent-color: #4a90d9;
+            --accent-hover: #357abd;
+            --success-color: #4caf50;
+            --danger-color: #f44336;
+            --highlight-bg: #fff3cd;
+            --selected-bg: #e3f2fd;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark-mode {
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #3d3d3d;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border-color: #444444;
+            --accent-color: #64b5f6;
+            --accent-hover: #42a5f5;
+            --highlight-bg: #4a3c1a;
+            --selected-bg: #1a3a5c;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        button, .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:hover, .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button:disabled {
+            background-color: var(--bg-tertiary);
+            cursor: not-allowed;
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+
+        .icon-btn {
+            padding: 0.5rem;
+            font-size: 1rem;
+        }
+
+        /* Main Layout */
+        main {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Player Section */
+        .player-section {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            height: fit-content;
+            position: sticky;
+            top: 1.5rem;
+        }
+
+        .audio-container {
+            background-color: var(--bg-primary);
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        audio {
+            width: 100%;
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: monospace;
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            margin-top: 0.5rem;
+        }
+
+        .seek-bar-container {
+            width: 100%;
+            margin: 0.5rem 0;
+        }
+
+        .seek-bar-container input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .playback-controls {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .playback-controls button {
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+        }
+
+        .timestamp-info {
+            background-color: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 1rem;
+        }
+
+        .timestamp-info h3 {
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .current-timestamp {
+            font-family: monospace;
+            font-size: 2rem;
+            text-align: center;
+            color: var(--accent-color);
+        }
+
+        .set-timestamp-hint {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+
+        .file-info {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            padding: 0.5rem;
+            background-color: var(--bg-primary);
+            border-radius: 4px;
+        }
+
+        .file-info span {
+            display: block;
+            word-break: break-all;
+        }
+
+        /* Lyrics Editor Section */
+        .lyrics-section {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            max-height: calc(100vh - 120px);
+        }
+
+        .lyrics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .lyrics-header h2 {
+            font-size: 1.2rem;
+        }
+
+        .lyrics-controls {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .lyrics-list {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--bg-primary);
+        }
+
+        .lyric-row {
+            display: grid;
+            grid-template-columns: 50px 120px 1fr 40px;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+            transition: background-color 0.15s;
+        }
+
+        .lyric-row:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .lyric-row.selected {
+            background-color: var(--selected-bg);
+            border-left: 3px solid var(--accent-color);
+        }
+
+        .lyric-row.current-playback {
+            background-color: var(--highlight-bg);
+        }
+
+        .lyric-row.selected.current-playback {
+            background-color: var(--highlight-bg);
+            border-left: 3px solid var(--accent-color);
+        }
+
+        .line-number {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .timestamp-input {
+            font-family: monospace;
+            padding: 0.4rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            text-align: center;
+            width: 100%;
+        }
+
+        .timestamp-input:focus {
+            outline: 2px solid var(--accent-color);
+            outline-offset: -1px;
+        }
+
+        .text-input {
+            padding: 0.4rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        .text-input:focus {
+            outline: 2px solid var(--accent-color);
+            outline-offset: -1px;
+        }
+
+        .delete-btn {
+            background-color: transparent;
+            color: var(--danger-color);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background-color: var(--danger-color);
+            color: white;
+            border-color: var(--danger-color);
+        }
+
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-state p {
+            margin-bottom: 1rem;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background-color: var(--bg-primary);
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal h2 {
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .shortcuts-list {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.5rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .shortcut-key {
+            font-family: monospace;
+            background-color: var(--bg-tertiary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .shortcut-desc {
+            color: var(--text-primary);
+            align-self: center;
+        }
+
+        .modal-close {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+
+            .player-section {
+                position: static;
+            }
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 1rem;
+            }
+
+            main {
+                padding: 1rem;
+            }
+
+            .lyric-row {
+                grid-template-columns: 40px 100px 1fr 35px;
+                gap: 0.3rem;
+                padding: 0.5rem;
+            }
+
+            .playback-controls button {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        /* Accessibility */
+        button:focus, input:focus {
+            outline: 2px solid var(--accent-color);
+            outline-offset: 2px;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🎵 Timed Lyrics Editor</h1>
+        <div class="header-controls">
+            <div class="file-input-wrapper">
+                <button class="btn">
+                    📁 音楽ファイル
+                </button>
+                <input type="file" id="audioInput" accept="audio/*" aria-label="音楽ファイルを選択">
+            </div>
+            <div class="file-input-wrapper">
+                <button class="btn btn-secondary">
+                    📝 LRCファイル
+                </button>
+                <input type="file" id="lrcInput" accept=".lrc,.txt" aria-label="LRCファイルを選択">
+            </div>
+            <button id="exportBtn" class="btn" disabled>
+                💾 エクスポート (Ctrl+S)
+            </button>
+            <button id="darkModeBtn" class="btn btn-secondary icon-btn" aria-label="ダークモード切り替え">
+                🌙
+            </button>
+            <button id="helpBtn" class="btn btn-secondary icon-btn" aria-label="キーボードショートカット">
+                ❓
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Player Section -->
+        <section class="player-section">
+            <div class="audio-container">
+                <audio id="audioPlayer"></audio>
+                <div class="seek-bar-container">
+                    <input type="range" id="seekBar" value="0" min="0" max="100" step="0.1" aria-label="シークバー">
+                </div>
+                <div class="time-display">
+                    <span id="currentTime">00:00.00</span>
+                    <span id="duration">00:00.00</span>
+                </div>
+            </div>
+
+            <div class="playback-controls">
+                <button id="playPauseBtn" disabled aria-label="再生/一時停止">
+                    ▶️ 再生
+                </button>
+                <button id="stopBtn" disabled aria-label="停止">
+                    ⏹️ 停止
+                </button>
+                <button id="rewindBtn" disabled aria-label="5秒戻る">
+                    ⏪ -5s
+                </button>
+                <button id="forwardBtn" disabled aria-label="5秒進む">
+                    ⏩ +5s
+                </button>
+            </div>
+
+            <div class="timestamp-info">
+                <h3>現在のタイムスタンプ</h3>
+                <div class="current-timestamp" id="currentTimestamp">00:00.00</div>
+                <div class="set-timestamp-hint">Enter: 選択行にタイムスタンプ設定</div>
+            </div>
+
+            <div class="file-info" id="fileInfo">
+                音楽ファイルが読み込まれていません
+            </div>
+        </section>
+
+        <!-- Lyrics Editor Section -->
+        <section class="lyrics-section">
+            <div class="lyrics-header">
+                <h2>歌詞エディタ</h2>
+                <div class="lyrics-controls">
+                    <button id="addLineBtn" class="btn btn-secondary">
+                        ➕ 行追加 (Ctrl+N)
+                    </button>
+                    <button id="clearAllBtn" class="btn btn-danger">
+                        🗑️ 全消去
+                    </button>
+                </div>
+            </div>
+
+            <div class="lyrics-list" id="lyricsList" role="listbox" aria-label="歌詞行リスト">
+                <div class="empty-state">
+                    <p>歌詞がありません</p>
+                    <p>LRCファイルを読み込むか、新しい行を追加してください</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Help Modal -->
+    <div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+        <div class="modal">
+            <h2 id="helpTitle">キーボードショートカット</h2>
+            <div class="shortcuts-list">
+                <span class="shortcut-key">Space</span>
+                <span class="shortcut-desc">再生/一時停止</span>
+
+                <span class="shortcut-key">Enter</span>
+                <span class="shortcut-desc">選択行にタイムスタンプ設定</span>
+
+                <span class="shortcut-key">Arrow Up / ↓</span>
+                <span class="shortcut-desc">前/次の行を選択</span>
+
+                <span class="shortcut-key">Delete / Backspace</span>
+                <span class="shortcut-desc">選択行を削除</span>
+
+                <span class="shortcut-key">Ctrl + N</span>
+                <span class="shortcut-desc">新しい行を追加</span>
+
+                <span class="shortcut-key">Ctrl + S</span>
+                <span class="shortcut-desc">LRCファイルとしてエクスポート</span>
+
+                <span class="shortcut-key">Ctrl + D</span>
+                <span class="shortcut-desc">ダークモード切り替え</span>
+
+                <span class="shortcut-key">← / →</span>
+                <span class="shortcut-desc">5秒戻る/進む</span>
+
+                <span class="shortcut-key">Esc</span>
+                <span class="shortcut-desc">このヘルプを閉じる</span>
+            </div>
+            <div class="modal-close">
+                <button id="closeHelpBtn" class="btn">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== State Management ====================
+        const state = {
+            audioFile: null,
+            audioUrl: null,
+            lyrics: [],
+            selectedLineIndex: -1,
+            currentPlaybackIndex: -1,
+            isPlaying: false,
+            darkMode: false
+        };
+
+        // ==================== DOM Elements ====================
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioInput = document.getElementById('audioInput');
+        const lrcInput = document.getElementById('lrcInput');
+        const exportBtn = document.getElementById('exportBtn');
+        const darkModeBtn = document.getElementById('darkModeBtn');
+        const helpBtn = document.getElementById('helpBtn');
+        const helpModal = document.getElementById('helpModal');
+        const closeHelpBtn = document.getElementById('closeHelpBtn');
+        const seekBar = document.getElementById('seekBar');
+        const currentTimeDisplay = document.getElementById('currentTime');
+        const durationDisplay = document.getElementById('duration');
+        const currentTimestampDisplay = document.getElementById('currentTimestamp');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const rewindBtn = document.getElementById('rewindBtn');
+        const forwardBtn = document.getElementById('forwardBtn');
+        const fileInfo = document.getElementById('fileInfo');
+        const lyricsList = document.getElementById('lyricsList');
+        const addLineBtn = document.getElementById('addLineBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+
+        // ==================== LRC Parser & Serializer ====================
+        function parseLRC(text) {
+            const lines = text.split('\n');
+            const parsedLyrics = [];
+            const timeRegex = /\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\](.*)/;
+
+            lines.forEach((line, index) => {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) {
+                    // Keep empty lines
+                    parsedLyrics.push({
+                        id: Date.now() + index,
+                        time: null,
+                        text: ''
+                    });
+                    return;
+                }
+
+                const match = trimmedLine.match(timeRegex);
+                if (match) {
+                    const minutes = parseInt(match[1], 10);
+                    const seconds = parseInt(match[2], 10);
+                    const milliseconds = match[3] ? parseInt(match[3].padEnd(3, '0'), 10) : 0;
+                    const totalSeconds = minutes * 60 + seconds + milliseconds / 1000;
+                    const text = match[4].trim();
+
+                    parsedLyrics.push({
+                        id: Date.now() + index,
+                        time: totalSeconds,
+                        text: text
+                    });
+                } else {
+                    // Line without timestamp
+                    parsedLyrics.push({
+                        id: Date.now() + index,
+                        time: null,
+                        text: trimmedLine
+                    });
+                }
+            });
+
+            return parsedLyrics;
+        }
+
+        function serializeLRC(lyrics) {
+            return lyrics.map(lyric => {
+                if (lyric.time === null) {
+                    return lyric.text;
+                }
+                const minutes = Math.floor(lyric.time / 60);
+                const seconds = Math.floor(lyric.time % 60);
+                const milliseconds = Math.round((lyric.time % 1) * 100);
+                const timeStr = `[${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(2, '0')}]`;
+                return `${timeStr}${lyric.text}`;
+            }).join('\n');
+        }
+
+        function formatTime(seconds) {
+            if (seconds === null || seconds === undefined || isNaN(seconds)) {
+                return '00:00.00';
+            }
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            const ms = Math.round((seconds % 1) * 100);
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
+        }
+
+        function parseTimeInput(timeStr) {
+            if (!timeStr || !timeStr.trim()) {
+                return null;
+            }
+            const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})(?:\.(\d{2}))?$/);
+            if (match) {
+                const minutes = parseInt(match[1], 10);
+                const seconds = parseInt(match[2], 10);
+                const ms = match[3] ? parseInt(match[3], 10) : 0;
+                return minutes * 60 + seconds + ms / 100;
+            }
+            return null;
+        }
+
+        // ==================== UI Rendering ====================
+        function renderLyrics() {
+            if (state.lyrics.length === 0) {
+                lyricsList.innerHTML = `
+                    <div class="empty-state">
+                        <p>歌詞がありません</p>
+                        <p>LRCファイルを読み込むか、新しい行を追加してください</p>
+                    </div>
+                `;
+                exportBtn.disabled = true;
+                return;
+            }
+
+            exportBtn.disabled = false;
+
+            lyricsList.innerHTML = state.lyrics.map((lyric, index) => {
+                const isSelected = index === state.selectedLineIndex;
+                const isCurrentPlayback = index === state.currentPlaybackIndex;
+                const classes = ['lyric-row'];
+                if (isSelected) classes.push('selected');
+                if (isCurrentPlayback) classes.push('current-playback');
+
+                return `
+                    <div class="${classes.join(' ')}" 
+                         data-index="${index}" 
+                         role="option" 
+                         aria-selected="${isSelected}">
+                        <span class="line-number">${index + 1}</span>
+                        <input type="text" 
+                               class="timestamp-input" 
+                               value="${lyric.time !== null ? formatTime(lyric.time) : ''}"
+                               data-index="${index}"
+                               aria-label="行${index + 1}のタイムスタンプ">
+                        <input type="text" 
+                               class="text-input" 
+                               value="${escapeHtml(lyric.text)}"
+                               data-index="${index}"
+                               aria-label="行${index + 1}の歌詞テキスト">
+                        <button class="delete-btn" 
+                                data-index="${index}" 
+                                aria-label="行${index + 1}を削除"
+                                title="削除">×</button>
+                    </div>
+                `;
+            }).join('');
+
+            // Attach event listeners to new elements
+            attachLyricRowListeners();
+
+            // Scroll selected row into view
+            if (state.selectedLineIndex >= 0) {
+                const selectedRow = lyricsList.querySelector(`[data-index="${state.selectedLineIndex}"]`);
+                if (selectedRow) {
+                    selectedRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function attachLyricRowListeners() {
+            // Row selection
+            lyricsList.querySelectorAll('.lyric-row').forEach(row => {
+                row.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('delete-btn') || 
+                        e.target.classList.contains('timestamp-input') ||
+                        e.target.classList.contains('text-input')) {
+                        return;
+                    }
+                    const index = parseInt(row.dataset.index, 10);
+                    selectLine(index);
+                });
+            });
+
+            // Timestamp input
+            lyricsList.querySelectorAll('.timestamp-input').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const index = parseInt(e.target.dataset.index, 10);
+                    const time = parseTimeInput(e.target.value);
+                    state.lyrics[index].time = time;
+                    if (time !== null) {
+                        // Seek to timestamp
+                        audioPlayer.currentTime = time;
+                    }
+                });
+
+                input.addEventListener('focus', () => {
+                    const index = parseInt(input.dataset.index, 10);
+                    selectLine(index);
+                });
+            });
+
+            // Text input
+            lyricsList.querySelectorAll('.text-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const index = parseInt(e.target.dataset.index, 10);
+                    state.lyrics[index].text = e.target.value;
+                });
+
+                input.addEventListener('focus', () => {
+                    const index = parseInt(input.dataset.index, 10);
+                    selectLine(index);
+                });
+            });
+
+            // Delete button
+            lyricsList.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.target.dataset.index, 10);
+                    deleteLine(index);
+                });
+            });
+        }
+
+        function selectLine(index) {
+            if (index < 0 || index >= state.lyrics.length) {
+                state.selectedLineIndex = -1;
+            } else {
+                state.selectedLineIndex = index;
+            }
+            renderLyrics();
+        }
+
+        function addLine() {
+            const newId = state.lyrics.length > 0 ? Math.max(...state.lyrics.map(l => l.id)) + 1 : Date.now();
+            state.lyrics.push({
+                id: newId,
+                time: null,
+                text: ''
+            });
+            selectLine(state.lyrics.length - 1);
+        }
+
+        function deleteLine(index) {
+            state.lyrics.splice(index, 1);
+            if (state.selectedLineIndex >= state.lyrics.length) {
+                state.selectedLineIndex = state.lyrics.length - 1;
+            } else if (state.selectedLineIndex === index) {
+                state.selectedLineIndex = -1;
+            }
+            renderLyrics();
+        }
+
+        function clearAllLyrics() {
+            if (confirm('すべての歌詞を削除しますか？')) {
+                state.lyrics = [];
+                state.selectedLineIndex = -1;
+                state.currentPlaybackIndex = -1;
+                renderLyrics();
+            }
+        }
+
+        function setTimestampToSelectedLine() {
+            if (state.selectedLineIndex < 0 || state.selectedLineIndex >= state.lyrics.length) {
+                return;
+            }
+            const currentTime = audioPlayer.currentTime;
+            state.lyrics[state.selectedLineIndex].time = currentTime;
+            renderLyrics();
+        }
+
+        // ==================== Audio Player Controls ====================
+        function togglePlayPause() {
+            if (!state.audioFile) return;
+
+            if (state.isPlaying) {
+                audioPlayer.pause();
+            } else {
+                audioPlayer.play();
+            }
+        }
+
+        function stopPlayback() {
+            if (!state.audioFile) return;
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+        }
+
+        function seek(seconds) {
+            audioPlayer.currentTime = Math.max(0, Math.min(audioPlayer.duration, seconds));
+        }
+
+        function rewind() {
+            seek(audioPlayer.currentTime - 5);
+        }
+
+        function forward() {
+            seek(audioPlayer.currentTime + 5);
+        }
+
+        function updatePlaybackHighlight() {
+            if (state.lyrics.length === 0) {
+                state.currentPlaybackIndex = -1;
+                renderLyrics();
+                return;
+            }
+
+            const currentTime = audioPlayer.currentTime;
+            let newIndex = -1;
+
+            // Find the most recent timestamp that is <= current time
+            for (let i = state.lyrics.length - 1; i >= 0; i--) {
+                if (state.lyrics[i].time !== null && state.lyrics[i].time <= currentTime) {
+                    newIndex = i;
+                    break;
+                }
+            }
+
+            if (newIndex !== state.currentPlaybackIndex) {
+                state.currentPlaybackIndex = newIndex;
+                renderLyrics();
+            }
+        }
+
+        // ==================== File Handling ====================
+        async function loadAudioFile(file) {
+            // Clean up previous audio URL
+            if (state.audioUrl) {
+                URL.revokeObjectURL(state.audioUrl);
+            }
+
+            state.audioFile = file;
+            state.audioUrl = URL.createObjectURL(file);
+            audioPlayer.src = state.audioUrl;
+
+            audioPlayer.onloadedmetadata = () => {
+                durationDisplay.textContent = formatTime(audioPlayer.duration);
+                seekBar.max = audioPlayer.duration;
+                enablePlaybackControls(true);
+                fileInfo.innerHTML = `
+                    <span><strong>ファイル:</strong> ${file.name}</span>
+                    <span><strong>サイズ:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                    <span><strong>長さ:</strong> ${formatTime(audioPlayer.duration)}</span>
+                `;
+            };
+        }
+
+        async function loadLRCFile(file) {
+            const text = await file.text();
+            state.lyrics = parseLRC(text);
+            state.selectedLineIndex = -1;
+            state.currentPlaybackIndex = -1;
+            renderLyrics();
+        }
+
+        function exportLRC() {
+            if (state.lyrics.length === 0) {
+                alert('エクスポートする歌詞がありません');
+                return;
+            }
+
+            const lrcContent = serializeLRC(state.lyrics);
+            const blob = new Blob(['\ufeff' + lrcContent], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lyrics.lrc';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function enablePlaybackControls(enabled) {
+            playPauseBtn.disabled = !enabled;
+            stopBtn.disabled = !enabled;
+            rewindBtn.disabled = !enabled;
+            forwardBtn.disabled = !enabled;
+        }
+
+        // ==================== Dark Mode ====================
+        function toggleDarkMode() {
+            state.darkMode = !state.darkMode;
+            if (state.darkMode) {
+                document.body.classList.add('dark-mode');
+                darkModeBtn.textContent = '☀️';
+            } else {
+                document.body.classList.remove('dark-mode');
+                darkModeBtn.textContent = '🌙';
+            }
+            localStorage.setItem('darkMode', state.darkMode.toString());
+        }
+
+        function loadDarkModePreference() {
+            const saved = localStorage.getItem('darkMode');
+            if (saved !== null) {
+                state.darkMode = saved === 'true';
+            } else {
+                state.darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            }
+
+            if (state.darkMode) {
+                document.body.classList.add('dark-mode');
+                darkModeBtn.textContent = '☀️';
+            }
+        }
+
+        // ==================== Event Listeners ====================
+        // File inputs
+        audioInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                loadAudioFile(file);
+            }
+        });
+
+        lrcInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                loadLRCFile(file);
+            }
+        });
+
+        // Audio player events
+        audioPlayer.addEventListener('timeupdate', () => {
+            const currentTime = audioPlayer.currentTime;
+            currentTimeDisplay.textContent = formatTime(currentTime);
+            currentTimestampDisplay.textContent = formatTime(currentTime);
+            seekBar.value = currentTime;
+            updatePlaybackHighlight();
+        });
+
+        audioPlayer.addEventListener('play', () => {
+            state.isPlaying = true;
+            playPauseBtn.textContent = '⏸️ 一時停止';
+        });
+
+        audioPlayer.addEventListener('pause', () => {
+            state.isPlaying = false;
+            playPauseBtn.textContent = '▶️ 再生';
+        });
+
+        audioPlayer.addEventListener('ended', () => {
+            state.isPlaying = false;
+            playPauseBtn.textContent = '▶️ 再生';
+        });
+
+        // Seek bar
+        seekBar.addEventListener('input', (e) => {
+            audioPlayer.currentTime = parseFloat(e.target.value);
+        });
+
+        // Playback controls
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        stopBtn.addEventListener('click', stopPlayback);
+        rewindBtn.addEventListener('click', rewind);
+        forwardBtn.addEventListener('click', forward);
+
+        // Lyrics controls
+        addLineBtn.addEventListener('click', addLine);
+        clearAllBtn.addEventListener('click', clearAllLyrics);
+        exportBtn.addEventListener('click', exportLRC);
+
+        // Dark mode toggle
+        darkModeBtn.addEventListener('click', toggleDarkMode);
+
+        // Help modal
+        helpBtn.addEventListener('click', () => {
+            helpModal.classList.add('active');
+        });
+
+        closeHelpBtn.addEventListener('click', () => {
+            helpModal.classList.remove('active');
+        });
+
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                helpModal.classList.remove('active');
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ignore shortcuts when typing in input fields
+            const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+            
+            // Handle Escape key even when typing (to close modal)
+            if (e.key === 'Escape') {
+                if (helpModal.classList.contains('active')) {
+                    helpModal.classList.remove('active');
+                    e.preventDefault();
+                    return;
+                }
+            }
+
+            if (isTyping) {
+                // Allow Ctrl+S to save even when typing
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    exportLRC();
+                    return;
+                }
+                // Allow Enter to commit timestamp
+                if (e.key === 'Enter' && e.target.classList.contains('timestamp-input')) {
+                    e.preventDefault();
+                    e.target.blur();
+                    return;
+                }
+                // Ignore other shortcuts when typing
+                return;
+            }
+
+            // Ctrl/Cmd + S: Export
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                exportLRC();
+                return;
+            }
+
+            // Ctrl/Cmd + N: Add line
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                addLine();
+                return;
+            }
+
+            // Ctrl/Cmd + D: Toggle dark mode
+            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                e.preventDefault();
+                toggleDarkMode();
+                return;
+            }
+
+            // Space: Play/Pause
+            if (e.key === ' ') {
+                e.preventDefault();
+                togglePlayPause();
+                return;
+            }
+
+            // Enter: Set timestamp to selected line
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                setTimestampToSelectedLine();
+                return;
+            }
+
+            // Arrow Up: Select previous line
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (state.selectedLineIndex > 0) {
+                    selectLine(state.selectedLineIndex - 1);
+                } else if (state.selectedLineIndex === -1 && state.lyrics.length > 0) {
+                    selectLine(0);
+                }
+                return;
+            }
+
+            // Arrow Down: Select next line
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (state.selectedLineIndex < state.lyrics.length - 1) {
+                    selectLine(state.selectedLineIndex + 1);
+                } else if (state.selectedLineIndex === -1 && state.lyrics.length > 0) {
+                    selectLine(0);
+                }
+                return;
+            }
+
+            // Delete/Backspace: Delete selected line
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                e.preventDefault();
+                if (state.selectedLineIndex >= 0) {
+                    deleteLine(state.selectedLineIndex);
+                }
+                return;
+            }
+
+            // Left Arrow: Rewind 5 seconds
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                rewind();
+                return;
+            }
+
+            // Right Arrow: Forward 5 seconds
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                forward();
+                return;
+            }
+        });
+
+        // ==================== Initialization ====================
+        function init() {
+            loadDarkModePreference();
+            renderLyrics();
+        }
+
+        init();
+    </script>
+</body>
+</html>
