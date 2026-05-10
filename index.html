@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timed Lyrics Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .panel h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 14px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .lyrics-display {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .lyric-line {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .lyric-line:hover {
+            background: #f0f0f0;
+        }
+
+        .lyric-line.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: scale(1.02);
+        }
+
+        .timestamp {
+            font-weight: bold;
+            color: #667eea;
+            margin-right: 10px;
+        }
+
+        .lyric-line.active .timestamp {
+            color: white;
+        }
+
+        .time-display {
+            font-size: 2em;
+            text-align: center;
+            padding: 20px;
+            background: #2d3436;
+            color: #00cec9;
+            font-family: 'Courier New', monospace;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .instructions h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .instructions ul {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin: 5px 0;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .export-format {
+            margin-top: 15px;
+        }
+
+        .export-format label {
+            margin-right: 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 Timed Lyrics Editor</h1>
+            <p>歌詞にタイミングを付けてカラオケ風ファイルを作成</p>
+        </header>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="panel">
+                    <h2>📝 歌詞入力</h2>
+                    <div class="instructions">
+                        <h3>使い方</h3>
+                        <ul>
+                            <li>歌詞を1行ずつ入力してください</li>
+                            <li>「現在の時間を追加」ボタンでタイムスタンプを挿入</li>
+                            <li>スペースキーでもタイムスタンプを追加できます</li>
+                            <li>LRC形式またはJSON形式でエクスポート可能</li>
+                        </ul>
+                    </div>
+                    <textarea id="lyricsInput" placeholder="ここに歌詞を入力してください...&#10;例：&#10;初めての出会い&#10;あの日の午後&#10;忘れられない瞬間"></textarea>
+                    
+                    <div class="time-display" id="timeDisplay">00:00.00</div>
+                    
+                    <div class="controls">
+                        <button onclick="addTimestamp()">⏱️ 現在の時間を追加</button>
+                        <button onclick="startTimer()" class="success">▶️ スタート</button>
+                        <button onclick="pauseTimer()" class="secondary">⏸️ ポーズ</button>
+                        <button onclick="resetTimer()" class="secondary">🔄 リセット</button>
+                    </div>
+
+                    <div class="controls">
+                        <button onclick="document.getElementById('fileInput').click()">📂 読み込み</button>
+                        <input type="file" id="fileInput" class="file-input" accept=".txt,.lrc,.json" onchange="loadFile(event)">
+                        <button onclick="saveFile()">💾 保存</button>
+                    </div>
+
+                    <div class="export-format">
+                        <label>
+                            <input type="radio" name="exportFormat" value="lrc" checked> LRC形式
+                        </label>
+                        <label>
+                            <input type="radio" name="exportFormat" value="json"> JSON形式
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="panel">
+                    <h2>🎤 プレビュー</h2>
+                    <div class="lyrics-display" id="lyricsDisplay">
+                        <p style="color: #999; text-align: center;">歌詞を入力するとここに表示されます</p>
+                    </div>
+                    <div class="controls">
+                        <button onclick="playPreview()">▶️ プレビュー再生</button>
+                        <button onclick="stopPreview()" class="secondary">⏹️ 停止</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let startTime = 0;
+        let elapsedTime = 0;
+        let timerInterval = null;
+        let isRunning = false;
+        let lyricsData = [];
+
+        // タイマー表示の更新
+        function updateTimeDisplay() {
+            const now = Date.now();
+            const elapsed = isRunning ? elapsedTime + (now - startTime) : elapsedTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            const centiseconds = Math.floor((elapsed % 1000) / 10);
+            
+            const timeString = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(centiseconds).padStart(2, '0')}`;
+            document.getElementById('timeDisplay').textContent = timeString;
+            
+            return timeString;
+        }
+
+        // タイマー開始
+        function startTimer() {
+            if (!isRunning) {
+                startTime = Date.now();
+                isRunning = true;
+                timerInterval = setInterval(updateTimeDisplay, 10);
+            }
+        }
+
+        // タイマー一時停止
+        function pauseTimer() {
+            if (isRunning) {
+                elapsedTime += Date.now() - startTime;
+                isRunning = false;
+                clearInterval(timerInterval);
+                updateTimeDisplay();
+            }
+        }
+
+        // タイマーリセット
+        function resetTimer() {
+            pauseTimer();
+            elapsedTime = 0;
+            updateTimeDisplay();
+        }
+
+        // タイムスタンプを追加
+        function addTimestamp() {
+            const textarea = document.getElementById('lyricsInput');
+            const currentTime = updateTimeDisplay();
+            const timestamp = `[${currentTime}]`;
+            
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            
+            // 改行コードを統一
+            const beforeText = text.substring(0, start);
+            const afterText = text.substring(end);
+            
+            // 行頭にタイムスタンプを挿入
+            const lastNewline = beforeText.lastIndexOf('\n');
+            const insertPos = lastNewline === -1 ? 0 : lastNewline + 1;
+            
+            textarea.value = text.substring(0, insertPos) + timestamp + ' ' + text.substring(insertPos);
+            textarea.selectionStart = textarea.selectionEnd = insertPos + timestamp.length + 1;
+            textarea.focus();
+            
+            parseLyrics();
+        }
+
+        // 歌詞を解析して表示
+        function parseLyrics() {
+            const text = document.getElementById('lyricsInput').value;
+            const lines = text.split('\n');
+            const display = document.getElementById('lyricsDisplay');
+            
+            lyricsData = [];
+            
+            if (text.trim() === '') {
+                display.innerHTML = '<p style="color: #999; text-align: center;">歌詞を入力するとここに表示されます</p>';
+                return;
+            }
+            
+            let html = '';
+            lines.forEach((line, index) => {
+                const match = line.match(/\[(\d{2}:\d{2}\.\d{2})\](.*)/);
+                if (match) {
+                    const time = match[1];
+                    const lyric = match[2].trim();
+                    lyricsData.push({ time, lyric, lineIndex: index });
+                    html += `<div class="lyric-line" data-time="${time}" data-index="${index}" onclick="jumpToTime('${time}')">
+                        <span class="timestamp">${time}</span>
+                        <span class="lyric-text">${lyric}</span>
+                    </div>`;
+                } else if (line.trim()) {
+                    lyricsData.push({ time: null, lyric: line.trim(), lineIndex: index });
+                    html += `<div class="lyric-line" data-index="${index}">
+                        <span class="lyric-text">${line.trim()}</span>
+                    </div>`;
+                }
+            });
+            
+            display.innerHTML = html || '<p style="color: #999; text-align: center;">タイムスタンプ付きの歌詞がここに表示されます</p>';
+        }
+
+        // 指定した時間にジャンプ
+        function jumpToTime(time) {
+            const [minutes, seconds] = time.split(':');
+            const [secs, centi] = seconds.split('.');
+            const totalMs = parseInt(minutes) * 60000 + parseInt(secs) * 1000 + parseInt(centi) * 10;
+            
+            resetTimer();
+            elapsedTime = totalMs;
+            updateTimeDisplay();
+        }
+
+        // プレビュー再生
+        let previewTimeouts = [];
+        function playPreview() {
+            stopPreview();
+            
+            if (lyricsData.length === 0) {
+                alert('歌詞がありません');
+                return;
+            }
+            
+            startTimer();
+            
+            lyricsData.forEach((item, index) => {
+                if (item.time) {
+                    const [minutes, seconds] = item.time.split(':');
+                    const [secs, centi] = seconds.split('.');
+                    const timeMs = parseInt(minutes) * 60000 + parseInt(secs) * 1000 + parseInt(centi) * 10;
+                    
+                    const timeout = setTimeout(() => {
+                        highlightLine(index);
+                    }, timeMs);
+                    
+                    previewTimeouts.push(timeout);
+                }
+            });
+        }
+
+        function stopPreview() {
+            previewTimeouts.forEach(timeout => clearTimeout(timeout));
+            previewTimeouts = [];
+            pauseTimer();
+            
+            document.querySelectorAll('.lyric-line').forEach(line => {
+                line.classList.remove('active');
+            });
+        }
+
+        function highlightLine(index) {
+            document.querySelectorAll('.lyric-line').forEach((line, i) => {
+                line.classList.toggle('active', i === index);
+            });
+        }
+
+        // ファイル保存
+        function saveFile() {
+            const format = document.querySelector('input[name="exportFormat"]:checked').value;
+            let content = '';
+            let filename = 'timed_lyrics';
+            
+            if (format === 'lrc') {
+                content = generateLRC();
+                filename += '.lrc';
+            } else {
+                content = JSON.stringify(lyricsData, null, 2);
+                filename += '.json';
+            }
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // LRC形式生成
+        function generateLRC() {
+            const text = document.getElementById('lyricsInput').value;
+            const lines = text.split('\n');
+            let lrc = '[ti:Untitled]\n[ar:Unknown]\n';
+            
+            lines.forEach(line => {
+                if (line.match(/\[\d{2}:\d{2}\.\d{2}\]/)) {
+                    lrc += line + '\n';
+                }
+            });
+            
+            return lrc;
+        }
+
+        // ファイル読み込み
+        function loadFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                
+                if (file.name.endsWith('.json')) {
+                    try {
+                        const data = JSON.parse(content);
+                        let text = '';
+                        data.forEach(item => {
+                            if (item.time) {
+                                text += `[${item.time}] ${item.lyric}\n`;
+                            } else {
+                                text += `${item.lyric}\n`;
+                            }
+                        });
+                        document.getElementById('lyricsInput').value = text;
+                    } catch (err) {
+                        alert('JSONファイルの解析に失敗しました');
+                    }
+                } else {
+                    document.getElementById('lyricsInput').value = content;
+                }
+                
+                parseLyrics();
+            };
+            reader.readAsText(file);
+        }
+
+        // スペースキーでタイムスタンプ追加
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space' && e.target.tagName !== 'BUTTON') {
+                e.preventDefault();
+                addTimestamp();
+            }
+        });
+
+        // 入力変更時に解析
+        document.getElementById('lyricsInput').addEventListener('input', parseLyrics);
+
+        // 初期化
+        updateTimeDisplay();
+    </script>
+</body>
+</html>
