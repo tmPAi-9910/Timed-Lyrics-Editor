@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timed Lyrics Editor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>🎵 Timed Lyrics Editor</h1>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-button active" data-tab="editor">
+                <span class="tab-icon">✏️</span>
+                <span class="tab-label">LRC Editor</span>
+            </button>
+            <button class="tab-button" data-tab="preview">
+                <span class="tab-icon">▶️</span>
+                <span class="tab-label">Preview</span>
+            </button>
+            <button class="tab-button" data-tab="help">
+                <span class="tab-icon">❓</span>
+                <span class="tab-label">Help</span>
+            </button>
+        </nav>
+
+        <main class="content">
+            <!-- LRC Editor Tab -->
+            <section id="editor" class="tab-content active">
+                <div class="editor-container">
+                    <div class="editor-toolbar">
+                        <button id="addLine" class="toolbar-btn">＋ Add Line</button>
+                        <button id="removeLine" class="toolbar-btn">− Remove Line</button>
+                        <div class="separator"></div>
+                        <button id="parseLRC" class="toolbar-btn">📥 Import LRC</button>
+                        <button id="exportLRC" class="toolbar-btn">📤 Export LRC</button>
+                        <div class="separator"></div>
+                        <button id="clearAll" class="toolbar-btn danger">🗑️ Clear All</button>
+                    </div>
+                    <div id="lyricsEditor" class="lyrics-editor">
+                        <!-- Lyrics lines will be added here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Preview Tab -->
+            <section id="preview" class="tab-content">
+                <div class="preview-container">
+                    <div class="preview-controls">
+                        <input type="file" id="audioFile" accept="audio/*" class="file-input">
+                        <button id="playPreview" class="toolbar-btn">▶️ Play</button>
+                        <button id="pausePreview" class="toolbar-btn">⏸️ Pause</button>
+                        <button id="stopPreview" class="toolbar-btn">⏹️ Stop</button>
+                        <div class="time-display">
+                            <span id="currentTime">00:00.00</span> / <span id="totalTime">00:00.00</span>
+                        </div>
+                    </div>
+                    <audio id="audioPlayer"></audio>
+                    <div id="previewLyrics" class="preview-lyrics">
+                        <p class="placeholder">Import audio and lyrics to preview</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Help Tab -->
+            <section id="help" class="tab-content">
+                <div class="help-container">
+                    <h2>📖 How to Use</h2>
+
+                    <div class="help-section">
+                        <h3>LRC Editor</h3>
+                        <ul>
+                            <li><strong>Add Line:</strong> Click the "＋ Add Line" button to add a new lyric line</li>
+                            <li><strong>Edit Lyrics:</strong> Click on any lyric text to edit it</li>
+                            <li><strong>Set Timestamp:</strong> Click on the timestamp to edit it (format: mm:ss.xx)</li>
+                            <li><strong>Import LRC:</strong> Click "📥 Import LRC" to load an existing LRC file</li>
+                            <li><strong>Export LRC:</strong> Click "📤 Export LRC" to save your work</li>
+                        </ul>
+                    </div>
+
+                    <div class="help-section">
+                        <h3>Preview</h3>
+                        <ul>
+                            <li><strong>Load Audio:</strong> Select an audio file (MP3, WAV, etc.)</li>
+                            <li><strong>Play Controls:</strong> Use Play, Pause, and Stop buttons</li>
+                            <li><strong>Sync Lyrics:</strong> Lyrics will highlight based on timestamps</li>
+                        </ul>
+                    </div>
+
+                    <div class="help-section">
+                        <h3>LRC Format</h3>
+                        <p>LRC files use the following format:</p>
+                        <pre class="code-example">
+[mm:ss.xx] Lyric text
+[00:12.34] Example line
+
+Where:
+  mm = minutes
+  ss = seconds
+  xx = centiseconds</pre>
+                    </div>
+
+                    <div class="help-section">
+                        <h3>Keyboard Shortcuts</h3>
+                        <ul>
+                            <li><strong>Ctrl+N:</strong> Add new line</li>
+                            <li><strong>Ctrl+S:</strong> Export LRC</li>
+                            <li><strong>Ctrl+O:</strong> Import LRC</li>
+                            <li><strong>Space:</strong> Play/Pause (in Preview tab)</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
