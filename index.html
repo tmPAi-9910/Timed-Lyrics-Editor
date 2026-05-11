@@ -786,6 +786,10 @@
             activeTab: 'lrc-editor'
         };
 
+        // Animation loop state
+        let animationFrameId = null;
+        let lastTime = 0;
+
         // ==================== DOM Elements ====================
         const audioPlayer = document.getElementById('audioPlayer');
         const audioInput = document.getElementById('audioInput');
@@ -1150,10 +1154,13 @@
 
         function updatePlaybackHighlight() {
             if (state.lyrics.length === 0) {
-                state.currentPlaybackIndex = -1;
-                renderLyrics();
-                if (state.activeTab === 'preview') {
-                    renderPreview();
+                const newIndex = -1;
+                if (newIndex !== state.currentPlaybackIndex) {
+                    state.currentPlaybackIndex = newIndex;
+                    renderLyrics();
+                    if (state.activeTab === 'preview') {
+                        renderPreview();
+                    }
                 }
                 return;
             }
@@ -1169,12 +1176,49 @@
                 }
             }
 
+            // Only re-render if the index changed
             if (newIndex !== state.currentPlaybackIndex) {
                 state.currentPlaybackIndex = newIndex;
                 renderLyrics();
                 if (state.activeTab === 'preview') {
                     renderPreview();
                 }
+            }
+        }
+
+        // ==================== Animation Loop ====================
+        function animationLoop(timestamp) {
+            // Throttle updates to 50ms (20fps) for display
+            if (timestamp - lastTime >= 50) {
+                if (state.isPlaying) {
+                    // Update time displays and seek bar
+                    const currentTime = audioPlayer.currentTime;
+                    currentTimeDisplay.textContent = formatTime(currentTime);
+                    currentTimestampDisplay.textContent = formatTime(currentTime);
+                    seekBar.value = currentTime;
+
+                    // Update playback highlight
+                    updatePlaybackHighlight();
+                }
+
+                lastTime = timestamp;
+            }
+
+            // Continue the loop
+            animationFrameId = requestAnimationFrame(animationLoop);
+        }
+
+        function startAnimationLoop() {
+            if (!animationFrameId) {
+                lastTime = 0;
+                animationFrameId = requestAnimationFrame(animationLoop);
+            }
+        }
+
+        function stopAnimationLoop() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
             }
         }
 
@@ -1192,6 +1236,10 @@
             audioPlayer.onloadedmetadata = () => {
                 durationDisplay.textContent = formatTime(audioPlayer.duration);
                 seekBar.max = audioPlayer.duration;
+                // Update time display to show initial position
+                currentTimeDisplay.textContent = formatTime(0);
+                currentTimestampDisplay.textContent = formatTime(0);
+                seekBar.value = 0;
                 enablePlaybackControls(true);
                 fileInfo.innerHTML = `
                     <span><strong>ファイル:</strong> ${file.name}</span>
@@ -1294,17 +1342,12 @@
         });
 
         // Audio player events
-        audioPlayer.addEventListener('timeupdate', () => {
-            const currentTime = audioPlayer.currentTime;
-            currentTimeDisplay.textContent = formatTime(currentTime);
-            currentTimestampDisplay.textContent = formatTime(currentTime);
-            seekBar.value = currentTime;
-            updatePlaybackHighlight();
-        });
+        // Note: timeupdate replaced by animationLoop for smoother updates
 
         audioPlayer.addEventListener('play', () => {
             state.isPlaying = true;
             playPauseBtn.textContent = '⏸️ 一時停止';
+            startAnimationLoop();
         });
 
         audioPlayer.addEventListener('pause', () => {
@@ -1316,6 +1359,9 @@
             state.isPlaying = false;
             playPauseBtn.textContent = '▶️ 再生';
         });
+
+        // Initialize animation loop
+        startAnimationLoop();
 
         // Seek bar
         seekBar.addEventListener('input', (e) => {
