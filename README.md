@@ -4,9 +4,11 @@ A completely static, browser-based timed lyrics editor for creating and editing 
 
 ## Features
 
+- **Tabbed Interface**: Organized interface with LRC Editor, Preview, and Settings tabs
 - **Audio Playback**: Load and play audio files (MP3, WAV, OGG, etc.)
 - **LRC Import/Export**: Read and write LRC format lyrics files
 - **Timestamp Editor**: Add, edit, and remove timestamps synchronized with audio
+- **Live Preview**: Preview lyrics with automatic highlighting during playback
 - **Dark Mode**: Toggle between light and dark themes
 - **Keyboard Shortcuts**: Full keyboard control for efficient workflow
 - **Auto-Highlight**: Current playback position automatically highlights in lyrics
@@ -19,17 +21,26 @@ A completely static, browser-based timed lyrics editor for creating and editing 
 
 Simply open `index.html` in a modern web browser (Chrome, Firefox, Edge, Safari).
 
+### Tabs Overview
+
+The editor is organized into three tabs:
+
+1. **LRCエディタ (LRC Editor)** - Main editing interface with audio controls and lyrics editor
+2. **プレビュー (Preview)** - View lyrics with timestamps, automatically highlights current playback position
+3. **設定 (Settings)** - Configure app settings, view keyboard shortcuts, and manage local data
+
 ### Basic Workflow
 
-1. **Load Audio**: Click "📁 音楽ファイル" and select an audio file (required)
+1. **Load Audio**: In the LRC Editor tab, click "📁 音楽ファイル" and select an audio file (required)
 2. **Load Lyrics (Optional)**: Click "📝 LRCファイル" to import existing LRC file, or click "➕ 行追加" to create new lines
 3. **Play Audio**: Use Space key or the play button to start playback
-4. **Add Timestamps**: 
+4. **Add Timestamps**:
    - Select a line by clicking it or using Arrow keys
    - Press Enter when the audio reaches the correct timing
    - Or manually edit the timestamp field
 5. **Edit Lyrics**: Click on text fields to edit lyric text
-6. **Export**: Click "💾 エクスポート" or press Ctrl+S to download LRC file
+6. **Preview**: Switch to the Preview tab to see your synchronized lyrics with live playback highlighting
+7. **Export**: Click "💾 エクスポート" or press Ctrl+S to download LRC file
 
 ### Keyboard Shortcuts
 
@@ -72,9 +83,11 @@ Tested on: Chrome, Firefox, Edge, Safari
 
 - **No External Dependencies**: Pure vanilla JavaScript
 - **Single File**: All HTML, CSS, and JavaScript in one `index.html` file
+- **Tabbed Architecture**: Clean separation of concerns with LRC Editor, Preview, and Settings tabs
 - **LocalStorage**: Dark mode preference is persisted
 - **File API**: Uses FileReader and Blob for file operations
 - **Responsive**: Adapts to different screen sizes
+- **Accessibility**: Full ARIA support for tabs and controls
 
 ## License
 

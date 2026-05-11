@@ -55,6 +55,12 @@
             border-bottom: 1px solid var(--border-color);
             padding: 1rem 2rem;
             display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .header-top {
+            display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
@@ -71,6 +77,49 @@
             gap: 0.5rem;
             align-items: center;
             flex-wrap: wrap;
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 0.25rem;
+            border-bottom: 2px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background-color: transparent;
+            color: var(--text-secondary);
+            border: none;
+            padding: 0.75rem 1.25rem;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+            background-color: var(--bg-tertiary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         .file-input-wrapper {
@@ -141,7 +190,7 @@
             grid-template-columns: 1fr 2fr;
             gap: 1.5rem;
             padding: 1.5rem;
-            min-height: calc(100vh - 80px);
+            min-height: calc(100vh - 180px);
         }
 
         /* Player Section */
@@ -507,35 +556,58 @@
 </head>
 <body>
     <header>
-        <h1>🎵 Timed Lyrics Editor</h1>
-        <div class="header-controls">
-            <div class="file-input-wrapper">
-                <button class="btn">
-                    📁 音楽ファイル
+        <div class="header-top">
+            <h1>🎵 Timed Lyrics Editor</h1>
+            <div class="header-controls">
+                <button id="darkModeBtn" class="btn btn-secondary icon-btn" aria-label="ダークモード切り替え">
+                    🌙
                 </button>
-                <input type="file" id="audioInput" accept="audio/*" aria-label="音楽ファイルを選択">
-            </div>
-            <div class="file-input-wrapper">
-                <button class="btn btn-secondary">
-                    📝 LRCファイル
+                <button id="helpBtn" class="btn btn-secondary icon-btn" aria-label="キーボードショートカット">
+                    ❓
                 </button>
-                <input type="file" id="lrcInput" accept=".lrc,.txt" aria-label="LRCファイルを選択">
             </div>
-            <button id="exportBtn" class="btn" disabled>
-                💾 エクスポート (Ctrl+S)
-            </button>
-            <button id="darkModeBtn" class="btn btn-secondary icon-btn" aria-label="ダークモード切り替え">
-                🌙
-            </button>
-            <button id="helpBtn" class="btn btn-secondary icon-btn" aria-label="キーボードショートカット">
-                ❓
-            </button>
         </div>
+
+        <!-- Tab Navigation -->
+        <nav class="tab-nav" role="tablist" aria-label="タブナビゲーション">
+            <button class="tab-btn active" data-tab="lrc-editor" role="tab" aria-selected="true" aria-controls="lrc-editor-panel">
+                📝 LRCエディタ
+            </button>
+            <button class="tab-btn" data-tab="preview" role="tab" aria-selected="false" aria-controls="preview-panel">
+                👁️ プレビュー
+            </button>
+            <button class="tab-btn" data-tab="settings" role="tab" aria-selected="false" aria-controls="settings-panel">
+                ⚙️ 設定
+            </button>
+        </nav>
     </header>
 
     <main>
+        <!-- LRC Editor Tab -->
+        <div id="lrc-editor-panel" class="tab-content active" role="tabpanel" aria-labelledby="lrc-editor-tab" style="display: contents;">
         <!-- Player Section -->
         <section class="player-section">
+            <div class="lyrics-header">
+                <h2>🎵 音楽コントロール</h2>
+                <div class="lyrics-controls">
+                    <div class="file-input-wrapper">
+                        <button class="btn btn-secondary">
+                            📁 音楽ファイル
+                        </button>
+                        <input type="file" id="audioInput" accept="audio/*" aria-label="音楽ファイルを選択">
+                    </div>
+                    <div class="file-input-wrapper">
+                        <button class="btn btn-secondary">
+                            📝 LRCファイル
+                        </button>
+                        <input type="file" id="lrcInput" accept=".lrc,.txt" aria-label="LRCファイルを選択">
+                    </div>
+                    <button id="exportBtn" class="btn" disabled>
+                        💾 エクスポート
+                    </button>
+                </div>
+            </div>
+
             <div class="audio-container">
                 <audio id="audioPlayer"></audio>
                 <div class="seek-bar-container">
@@ -594,40 +666,107 @@
                 </div>
             </div>
         </section>
+        </div>
+
+        <!-- Preview Tab -->
+        <div id="preview-panel" class="tab-content" role="tabpanel" aria-labelledby="preview-tab">
+            <section class="lyrics-section" style="grid-column: 1 / -1;">
+                <div class="lyrics-header">
+                    <h2>👁️ プレビュー</h2>
+                </div>
+                <div id="previewContent" class="lyrics-list">
+                    <div class="empty-state">
+                        <p>プレビューを表示するには、歌詞を追加してください</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings-panel" class="tab-content" role="tabpanel" aria-labelledby="settings-tab">
+            <section class="lyrics-section" style="grid-column: 1 / -1;">
+                <div class="lyrics-header">
+                    <h2>⚙️ 設定</h2>
+                </div>
+                <div class="lyrics-list" style="padding: 1.5rem;">
+                    <div style="margin-bottom: 1.5rem;">
+                        <h3 style="margin-bottom: 0.5rem; color: var(--text-secondary);">キーボードショートカット</h3>
+                        <div class="shortcuts-list">
+                            <span class="shortcut-key">Space</span>
+                            <span class="shortcut-desc">再生/一時停止</span>
+
+                            <span class="shortcut-key">Enter</span>
+                            <span class="shortcut-desc">選択行にタイムスタンプ設定</span>
+
+                            <span class="shortcut-key">Arrow Up / ↓</span>
+                            <span class="shortcut-desc">前/次の行を選択</span>
+
+                            <span class="shortcut-key">Delete / Backspace</span>
+                            <span class="shortcut-desc">選択行を削除</span>
+
+                            <span class="shortcut-key">Ctrl + N</span>
+                            <span class="shortcut-desc">新しい行を追加</span>
+
+                            <span class="shortcut-key">Ctrl + S</span>
+                            <span class="shortcut-desc">LRCファイルとしてエクスポート</span>
+
+                            <span class="shortcut-key">Ctrl + D</span>
+                            <span class="shortcut-desc">ダークモード切り替え</span>
+
+                            <span class="shortcut-key">← / →</span>
+                            <span class="shortcut-desc">5秒戻る/進む</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <h3 style="margin-bottom: 0.5rem; color: var(--text-secondary);">テーマ設定</h3>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <button id="settingsDarkModeBtn" class="btn btn-secondary">
+                                🌙 ダークモード切り替え
+                            </button>
+                            <span style="color: var(--text-secondary);">現在のモード: <span id="currentModeDisplay">ライト</span></span>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <h3 style="margin-bottom: 0.5rem; color: var(--text-secondary);">情報</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">Timed Lyrics Editor v1.0</p>
+                        <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">完全に静的なブラウザベースのタイムド歌詞エディタ</p>
+                        <p style="color: var(--text-secondary);">外部依存なし・ビルド不要・単一HTMLファイル</p>
+                    </div>
+
+                    <div>
+                        <h3 style="margin-bottom: 0.5rem; color: var(--text-secondary);">データ管理</h3>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <button id="clearLocalStorageBtn" class="btn btn-danger btn-secondary">
+                                🗑️ ローカルデータを消去
+                            </button>
+                        </div>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">
+                            ダークモードの設定など、ブラウザに保存されているデータを消去します。
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </div>
     </main>
 
     <!-- Help Modal -->
     <div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
         <div class="modal">
-            <h2 id="helpTitle">キーボードショートカット</h2>
-            <div class="shortcuts-list">
-                <span class="shortcut-key">Space</span>
-                <span class="shortcut-desc">再生/一時停止</span>
-
-                <span class="shortcut-key">Enter</span>
-                <span class="shortcut-desc">選択行にタイムスタンプ設定</span>
-
-                <span class="shortcut-key">Arrow Up / ↓</span>
-                <span class="shortcut-desc">前/次の行を選択</span>
-
-                <span class="shortcut-key">Delete / Backspace</span>
-                <span class="shortcut-desc">選択行を削除</span>
-
-                <span class="shortcut-key">Ctrl + N</span>
-                <span class="shortcut-desc">新しい行を追加</span>
-
-                <span class="shortcut-key">Ctrl + S</span>
-                <span class="shortcut-desc">LRCファイルとしてエクスポート</span>
-
-                <span class="shortcut-key">Ctrl + D</span>
-                <span class="shortcut-desc">ダークモード切り替え</span>
-
-                <span class="shortcut-key">← / →</span>
-                <span class="shortcut-desc">5秒戻る/進む</span>
-
-                <span class="shortcut-key">Esc</span>
-                <span class="shortcut-desc">このヘルプを閉じる</span>
+            <h2 id="helpTitle">ヘルプ</h2>
+            <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                Timed Lyrics Editorの使い方：
+            </p>
+            <div style="margin-bottom: 1.5rem;">
+                <p style="margin-bottom: 0.5rem;"><strong>1. 音楽ファイルを読み込む：</strong>「📁 音楽ファイル」ボタンをクリックして音声ファイルを選択してください。</p>
+                <p style="margin-bottom: 0.5rem;"><strong>2. 歌詞を追加：</strong>「➕ 行追加」ボタンまたはCtrl+Nで新しい行を追加します。</p>
+                <p style="margin-bottom: 0.5rem;"><strong>3. タイムスタンプを設定：</strong>音楽を再生中に、歌詞が始まるタイミングでEnterキーを押すと、選択中の行に現在の再生時間が設定されます。</p>
+                <p style="margin-bottom: 0.5rem;"><strong>4. エクスポート：</strong>「💾 エクスポート」ボタンまたはCtrl+SでLRCファイルとして保存します。</p>
             </div>
+            <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                詳しいキーボードショートカットは「⚙️ 設定」タブを確認してください。
+            </p>
             <div class="modal-close">
                 <button id="closeHelpBtn" class="btn">閉じる</button>
             </div>
@@ -643,7 +782,8 @@
             selectedLineIndex: -1,
             currentPlaybackIndex: -1,
             isPlaying: false,
-            darkMode: false
+            darkMode: false,
+            activeTab: 'lrc-editor'
         };
 
         // ==================== DOM Elements ====================
@@ -667,6 +807,12 @@
         const lyricsList = document.getElementById('lyricsList');
         const addLineBtn = document.getElementById('addLineBtn');
         const clearAllBtn = document.getElementById('clearAllBtn');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const previewContent = document.getElementById('previewContent');
+        const settingsDarkModeBtn = document.getElementById('settingsDarkModeBtn');
+        const currentModeDisplay = document.getElementById('currentModeDisplay');
+        const clearLocalStorageBtn = document.getElementById('clearLocalStorageBtn');
 
         // ==================== LRC Parser & Serializer ====================
         function parseLRC(text) {
@@ -772,23 +918,23 @@
                 if (isCurrentPlayback) classes.push('current-playback');
 
                 return `
-                    <div class="${classes.join(' ')}" 
-                         data-index="${index}" 
-                         role="option" 
+                    <div class="${classes.join(' ')}"
+                         data-index="${index}"
+                         role="option"
                          aria-selected="${isSelected}">
                         <span class="line-number">${index + 1}</span>
-                        <input type="text" 
-                               class="timestamp-input" 
+                        <input type="text"
+                               class="timestamp-input"
                                value="${lyric.time !== null ? formatTime(lyric.time) : ''}"
                                data-index="${index}"
                                aria-label="行${index + 1}のタイムスタンプ">
-                        <input type="text" 
-                               class="text-input" 
+                        <input type="text"
+                               class="text-input"
                                value="${escapeHtml(lyric.text)}"
                                data-index="${index}"
                                aria-label="行${index + 1}の歌詞テキスト">
-                        <button class="delete-btn" 
-                                data-index="${index}" 
+                        <button class="delete-btn"
+                                data-index="${index}"
                                 aria-label="行${index + 1}を削除"
                                 title="削除">×</button>
                     </div>
@@ -804,6 +950,65 @@
                 if (selectedRow) {
                     selectedRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
+            }
+        }
+
+        function renderPreview() {
+            if (state.lyrics.length === 0) {
+                previewContent.innerHTML = `
+                    <div class="empty-state">
+                        <p>プレビューを表示するには、歌詞を追加してください</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort lyrics by timestamp for preview
+            const sortedLyrics = [...state.lyrics].sort((a, b) => {
+                if (a.time === null && b.time === null) return 0;
+                if (a.time === null) return 1;
+                if (b.time === null) return -1;
+                return a.time - b.time;
+            });
+
+            previewContent.innerHTML = sortedLyrics.map((lyric, index) => {
+                const isCurrentPlayback = state.currentPlaybackIndex !== -1 && lyric.id === state.lyrics[state.currentPlaybackIndex].id;
+                const classes = ['lyric-row'];
+                if (isCurrentPlayback) classes.push('current-playback');
+
+                return `
+                    <div class="${classes.join(' ')}" style="grid-template-columns: 100px 1fr;">
+                        <span class="line-number">${lyric.time !== null ? formatTime(lyric.time) : '--:--.--'}</span>
+                        <span style="font-size: 1.1rem; padding: 0.4rem;">${escapeHtml(lyric.text) || '<em style="color: var(--text-secondary);">（空行）</em>'}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function switchTab(tabId) {
+            state.activeTab = tabId;
+
+            // Update tab buttons
+            tabBtns.forEach(btn => {
+                const isActive = btn.dataset.tab === tabId;
+                btn.classList.toggle('active', isActive);
+                btn.setAttribute('aria-selected', isActive);
+            });
+
+            // Update tab contents
+            tabContents.forEach(content => {
+                const isActive = content.id === `${tabId}-panel`;
+                content.classList.toggle('active', isActive);
+                if (isActive) {
+                    content.style.display = content.id === 'lrc-editor-panel' ? 'contents' : 'block';
+                } else {
+                    content.style.display = 'none';
+                }
+            });
+
+            // Update preview when switching to preview tab
+            if (tabId === 'preview') {
+                renderPreview();
             }
         }
 
@@ -947,6 +1152,9 @@
             if (state.lyrics.length === 0) {
                 state.currentPlaybackIndex = -1;
                 renderLyrics();
+                if (state.activeTab === 'preview') {
+                    renderPreview();
+                }
                 return;
             }
 
@@ -964,6 +1172,9 @@
             if (newIndex !== state.currentPlaybackIndex) {
                 state.currentPlaybackIndex = newIndex;
                 renderLyrics();
+                if (state.activeTab === 'preview') {
+                    renderPreview();
+                }
             }
         }
 
@@ -1035,6 +1246,13 @@
                 darkModeBtn.textContent = '🌙';
             }
             localStorage.setItem('darkMode', state.darkMode.toString());
+            updateModeDisplay();
+        }
+
+        function updateModeDisplay() {
+            if (currentModeDisplay) {
+                currentModeDisplay.textContent = state.darkMode ? 'ダーク' : 'ライト';
+            }
         }
 
         function loadDarkModePreference() {
@@ -1048,6 +1266,14 @@
             if (state.darkMode) {
                 document.body.classList.add('dark-mode');
                 darkModeBtn.textContent = '☀️';
+            }
+            updateModeDisplay();
+        }
+
+        function clearLocalStorage() {
+            if (confirm('ローカルストレージに保存されているデータを消去しますか？\n（ダークモードの設定などがリセットされます）')) {
+                localStorage.clear();
+                alert('ローカルデータを消去しました。');
             }
         }
 
@@ -1109,6 +1335,20 @@
 
         // Dark mode toggle
         darkModeBtn.addEventListener('click', toggleDarkMode);
+
+        // Settings dark mode toggle
+        settingsDarkModeBtn.addEventListener('click', toggleDarkMode);
+
+        // Clear local storage
+        clearLocalStorageBtn.addEventListener('click', clearLocalStorage);
+
+        // Tab navigation
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+                switchTab(tabId);
+            });
+        });
 
         // Help modal
         helpBtn.addEventListener('click', () => {
