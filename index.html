@@ -1,37 +1,33 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timed Lyrics Editor</title>
     <style>
         :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f5f5f5;
-            --bg-tertiary: #e9e9e9;
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #e3e3e3;
+            --bg-tertiary: #d3d3d3;
             --text-primary: #333333;
             --text-secondary: #666666;
             --border-color: #cccccc;
-            --accent-color: #4a90d9;
-            --accent-hover: #357abd;
-            --success-color: #4caf50;
-            --danger-color: #f44336;
-            --highlight-bg: #fff3cd;
-            --selected-bg: #e3f2fd;
-            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --icon-color: #333333;
+            --highlight-bg: #ffffff;
+            --selected-bg: #d9d9d9;
+            --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .dark-mode {
-            --bg-primary: #1e1e1e;
+            --bg-primary: #1a1a1a;
             --bg-secondary: #2d2d2d;
             --bg-tertiary: #3d3d3d;
-            --text-primary: #e0e0e0;
+            --text-primary: #e3e3e3;
             --text-secondary: #a0a0a0;
             --border-color: #444444;
-            --accent-color: #64b5f6;
-            --accent-hover: #42a5f5;
-            --highlight-bg: #4a3c1a;
-            --selected-bg: #1a3a5c;
+            --icon-color: #e3e3e3;
+            --highlight-bg: #252525;
+            --selected-bg: #3a3a3a;
             --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
         }
 
@@ -47,29 +43,33 @@
             color: var(--text-primary);
             line-height: 1.6;
             transition: background-color 0.3s, color 0.3s;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Header */
         header {
             background-color: var(--bg-secondary);
             border-bottom: 1px solid var(--border-color);
-            padding: 1rem 2rem;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
         }
 
         .header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
+            padding: 1rem 1.5rem;
             gap: 1rem;
+            flex-wrap: wrap;
         }
 
         h1 {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 600;
             color: var(--text-primary);
+            letter-spacing: 0.5px;
         }
 
         .header-controls {
@@ -79,11 +79,90 @@
             flex-wrap: wrap;
         }
 
+        /* Progress Bar */
+        .progress-container {
+            padding: 0 1.5rem 0.75rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: var(--bg-tertiary);
+            border-radius: 2px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: var(--text-primary);
+            width: 0%;
+            transition: width 0.05s linear;
+        }
+
+        .progress-bar:hover .progress-bar-fill {
+            opacity: 0.8;
+        }
+
+        /* Playback Controls */
+        .playback-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1.5rem;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            gap: 1rem;
+        }
+
+        .playback-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .icon-btn {
+            background-color: transparent;
+            border: none;
+            padding: 0.5rem;
+            cursor: pointer;
+            color: var(--icon-color);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .icon-btn:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .icon-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .icon-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        .time-display {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+
         /* Tab Navigation */
         .tab-nav {
             display: flex;
-            gap: 0.25rem;
-            border-bottom: 2px solid var(--border-color);
+            gap: 0;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
             overflow-x: auto;
         }
 
@@ -91,16 +170,17 @@
             background-color: transparent;
             color: var(--text-secondary);
             border: none;
-            padding: 0.75rem 1.25rem;
+            padding: 0.75rem 1.5rem;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 500;
-            border-bottom: 3px solid transparent;
             transition: all 0.2s;
             white-space: nowrap;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            border-radius: 4px 4px 0 0;
+            position: relative;
         }
 
         .tab-btn:hover {
@@ -109,17 +189,67 @@
         }
 
         .tab-btn.active {
-            color: var(--accent-color);
-            border-bottom-color: var(--accent-color);
-            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            background-color: var(--bg-primary);
+            font-weight: 600;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: var(--text-primary);
+            border-radius: 2px 2px 0 0;
         }
 
         .tab-content {
             display: none;
+            padding: 1.5rem;
+            flex: 1;
+            overflow-y: auto;
         }
 
         .tab-content.active {
             display: block;
+        }
+
+        /* Buttons */
+        .btn {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background-color: var(--border-color);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background-color: var(--bg-tertiary);
+            color: #ef5350;
+            border: 1px solid #ef5350;
+        }
+
+        .btn-danger:hover {
+            background-color: #ef5350;
+            color: white;
         }
 
         .file-input-wrapper {
@@ -138,221 +268,115 @@
             height: 100%;
         }
 
-        button, .btn {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background-color 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        button:hover, .btn:hover {
-            background-color: var(--accent-hover);
-        }
-
-        button:disabled {
-            background-color: var(--bg-tertiary);
-            cursor: not-allowed;
-            color: var(--text-secondary);
-        }
-
-        .btn-secondary {
-            background-color: var(--bg-tertiary);
-            color: var(--text-primary);
-        }
-
-        .btn-secondary:hover {
-            background-color: var(--border-color);
-        }
-
-        .btn-danger {
-            background-color: var(--danger-color);
-        }
-
-        .btn-danger:hover {
-            background-color: #d32f2f;
-        }
-
-        .icon-btn {
-            padding: 0.5rem;
-            font-size: 1rem;
-        }
-
         /* Main Layout */
         main {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 1.5rem;
-            padding: 1.5rem;
-            min-height: calc(100vh - 180px);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Player Section */
-        .player-section {
-            background-color: var(--bg-secondary);
-            border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
+        /* Lyric Tab */
+        .lyric-tab-content {
             display: flex;
             flex-direction: column;
             gap: 1rem;
-            height: fit-content;
-            position: sticky;
-            top: 1.5rem;
+            height: 100%;
+            max-height: calc(100vh - 200px);
         }
 
-        .audio-container {
-            background-color: var(--bg-primary);
-            border-radius: 8px;
-            padding: 1rem;
-            border: 1px solid var(--border-color);
-        }
-
-        audio {
-            width: 100%;
-        }
-
-        .time-display {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-family: monospace;
-            font-size: 1.2rem;
-            color: var(--text-primary);
-            margin-top: 0.5rem;
-        }
-
-        .seek-bar-container {
-            width: 100%;
-            margin: 0.5rem 0;
-        }
-
-        .seek-bar-container input[type="range"] {
-            width: 100%;
-            cursor: pointer;
-        }
-
-        .playback-controls {
+        .lyric-toolbar {
             display: flex;
             gap: 0.5rem;
-            justify-content: center;
+            align-items: center;
             flex-wrap: wrap;
         }
 
-        .playback-controls button {
-            padding: 0.75rem 1rem;
-            font-size: 1rem;
-        }
-
-        .timestamp-info {
-            background-color: var(--bg-tertiary);
-            border-radius: 6px;
-            padding: 1rem;
-        }
-
-        .timestamp-info h3 {
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-
-        .current-timestamp {
-            font-family: monospace;
-            font-size: 2rem;
-            text-align: center;
-            color: var(--accent-color);
-        }
-
-        .set-timestamp-hint {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            text-align: center;
-            margin-top: 0.5rem;
-        }
-
-        .file-info {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            padding: 0.5rem;
-            background-color: var(--bg-primary);
-            border-radius: 4px;
-        }
-
-        .file-info span {
-            display: block;
-            word-break: break-all;
-        }
-
-        /* Lyrics Editor Section */
-        .lyrics-section {
-            background-color: var(--bg-secondary);
-            border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
+        .lyric-textarea-container {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            max-height: calc(100vh - 120px);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--bg-secondary);
+            overflow: hidden;
         }
 
-        .lyrics-header {
+        .lyric-textarea {
+            flex: 1;
+            width: 100%;
+            min-height: 400px;
+            padding: 1rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border: none;
+            resize: none;
+            outline: none;
+        }
+
+        .lyric-textarea::placeholder {
+            color: var(--text-secondary);
+        }
+
+        /* Syncer Tab */
+        .syncer-container {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 1rem;
+            height: 100%;
+            max-height: calc(100vh - 200px);
+        }
+
+        .syncer-toolbar {
+            display: flex;
+            gap: 1rem;
             align-items: center;
-            margin-bottom: 1rem;
             flex-wrap: wrap;
-            gap: 0.5rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .lyrics-header h2 {
-            font-size: 1.2rem;
+        .syncer-help {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
         }
 
-        .lyrics-controls {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .lyrics-list {
+        .syncer-list {
             flex: 1;
             overflow-y: auto;
             border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: var(--bg-primary);
+            border-radius: 4px;
+            background-color: var(--bg-secondary);
         }
 
-        .lyric-row {
+        .syncer-row {
             display: grid;
             grid-template-columns: 50px 120px 1fr 40px;
             gap: 0.5rem;
-            padding: 0.75rem;
+            padding: 0.5rem 0.75rem;
             border-bottom: 1px solid var(--border-color);
             align-items: center;
             transition: background-color 0.15s;
         }
 
-        .lyric-row:hover {
+        .syncer-row:hover {
             background-color: var(--bg-tertiary);
         }
 
-        .lyric-row.selected {
+        .syncer-row.selected {
             background-color: var(--selected-bg);
-            border-left: 3px solid var(--accent-color);
+            border-left: 3px solid var(--text-primary);
         }
 
-        .lyric-row.current-playback {
+        .syncer-row.current-playback {
             background-color: var(--highlight-bg);
         }
 
-        .lyric-row.selected.current-playback {
+        .syncer-row.selected.current-playback {
             background-color: var(--highlight-bg);
-            border-left: 3px solid var(--accent-color);
+            border-left: 3px solid var(--text-primary);
         }
 
         .line-number {
@@ -361,67 +385,145 @@
             text-align: center;
         }
 
-        .timestamp-input {
+        .timestamp-display {
             font-family: monospace;
-            padding: 0.4rem;
+            padding: 0.3rem;
             border: 1px solid var(--border-color);
             border-radius: 4px;
-            background-color: var(--bg-secondary);
+            background-color: var(--bg-primary);
             color: var(--text-primary);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             text-align: center;
-            width: 100%;
         }
 
-        .timestamp-input:focus {
-            outline: 2px solid var(--accent-color);
-            outline-offset: -1px;
-        }
-
-        .text-input {
-            padding: 0.4rem;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            background-color: var(--bg-secondary);
-            color: var(--text-primary);
+        .text-display {
+            padding: 0.3rem;
             font-size: 0.9rem;
-            width: 100%;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        .text-input:focus {
-            outline: 2px solid var(--accent-color);
-            outline-offset: -1px;
-        }
-
-        .delete-btn {
+        .syncer-delete-btn {
             background-color: transparent;
-            color: var(--danger-color);
-            border: 1px solid var(--border-color);
-            padding: 0.4rem;
+            color: var(--text-secondary);
+            border: none;
+            padding: 0.3rem;
             border-radius: 4px;
             cursor: pointer;
             font-size: 1.2rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 100%;
             transition: all 0.2s;
         }
 
-        .delete-btn:hover {
-            background-color: var(--danger-color);
-            color: white;
-            border-color: var(--danger-color);
+        .syncer-delete-btn:hover {
+            color: #ef5350;
+            background-color: rgba(239, 83, 80, 0.1);
         }
 
-        .empty-state {
-            padding: 3rem;
+        /* Preview Tab */
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            height: 100%;
+            max-height: calc(100vh - 200px);
+        }
+
+        .preview-list {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--bg-secondary);
+            padding: 2rem;
             text-align: center;
-            color: var(--text-secondary);
         }
 
-        .empty-state p {
+        .preview-line {
+            padding: 0.5rem 1rem;
+            margin: 0.25rem 0;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            opacity: 0.3;
+            transform: scale(0.95);
+        }
+
+        .preview-line.current {
+            opacity: 1;
+            transform: scale(1);
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 1.3rem;
+            text-shadow: 0 0 20px var(--text-primary);
+        }
+
+        .preview-line.past {
+            opacity: 0.6;
+        }
+
+        .preview-line.empty {
+            opacity: 0.3;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        /* Settings Tab */
+        .settings-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .settings-section {
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .settings-section:last-child {
+            border-bottom: none;
+        }
+
+        .settings-section h2 {
+            font-size: 1.2rem;
             margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .shortcuts-list {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.5rem 1.5rem;
+        }
+
+        .shortcut-key {
+            font-family: monospace;
+            background-color: var(--bg-tertiary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .shortcut-desc {
+            color: var(--text-primary);
+            align-self: center;
+        }
+
+        .settings-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .settings-label {
+            color: var(--text-secondary);
         }
 
         /* Modal */
@@ -444,8 +546,8 @@
 
         .modal {
             background-color: var(--bg-primary);
-            border-radius: 8px;
-            padding: 2rem;
+            border-radius: 4px;
+            padding: 1.5rem;
             max-width: 600px;
             width: 90%;
             max-height: 80vh;
@@ -458,66 +560,26 @@
             color: var(--text-primary);
         }
 
-        .shortcuts-list {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 0.5rem 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .shortcut-key {
-            font-family: monospace;
-            background-color: var(--bg-tertiary);
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            text-align: center;
-        }
-
-        .shortcut-desc {
-            color: var(--text-primary);
-            align-self: center;
+        .modal p {
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
         }
 
         .modal-close {
             display: flex;
             justify-content: flex-end;
             gap: 0.5rem;
+            margin-top: 1.5rem;
         }
 
-        /* Responsive */
-        @media (max-width: 900px) {
-            main {
-                grid-template-columns: 1fr;
-            }
-
-            .player-section {
-                position: static;
-            }
+        /* Empty State */
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-secondary);
         }
 
-        @media (max-width: 600px) {
-            header {
-                padding: 1rem;
-            }
-
-            main {
-                padding: 1rem;
-            }
-
-            .lyric-row {
-                grid-template-columns: 40px 100px 1fr 35px;
-                gap: 0.3rem;
-                padding: 0.5rem;
-            }
-
-            .playback-controls button {
-                padding: 0.5rem 0.75rem;
-                font-size: 0.9rem;
-            }
-        }
-
-        /* Scrollbar Styling */
+        /* Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -535,9 +597,43 @@
             background: var(--text-secondary);
         }
 
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-top {
+                padding: 0.75rem 1rem;
+            }
+
+            h1 {
+                font-size: 1.1rem;
+            }
+
+            .tab-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+            }
+
+            .tab-content {
+                padding: 1rem;
+            }
+
+            .syncer-row {
+                grid-template-columns: 40px 100px 1fr 35px;
+                gap: 0.3rem;
+                padding: 0.5rem;
+            }
+
+            .preview-line {
+                font-size: 1rem;
+            }
+
+            .preview-line.current {
+                font-size: 1.1rem;
+            }
+        }
+
         /* Accessibility */
-        button:focus, input:focus {
-            outline: 2px solid var(--accent-color);
+        button:focus, textarea:focus {
+            outline: 2px solid var(--text-primary);
             outline-offset: 2px;
         }
 
@@ -552,226 +648,226 @@
             white-space: nowrap;
             border: 0;
         }
+
+        /* Smooth scroll behavior */
+        .syncer-list, .preview-list {
+            scroll-behavior: smooth;
+        }
     </style>
 </head>
 <body>
     <header>
         <div class="header-top">
-            <h1>🎵 Timed Lyrics Editor</h1>
+            <h1>Timed Lyrics Editor</h1>
             <div class="header-controls">
-                <button id="darkModeBtn" class="btn btn-secondary icon-btn" aria-label="ダークモード切り替え">
-                    🌙
+                <div class="file-input-wrapper">
+                    <button class="btn">
+                        <img src="assets/upload-24x24-%23e3e3e3.svg" alt="" width="20" height="20">
+                        Audio
+                    </button>
+                    <input type="file" id="audioInput" accept="audio/*" aria-label="Load audio file">
+                </div>
+                <div class="file-input-wrapper">
+                    <button class="btn">
+                        <img src="assets/upload-24x24-%23e3e3e3.svg" alt="" width="20" height="20">
+                        LRC
+                    </button>
+                    <input type="file" id="lrcInput" accept=".lrc,.txt" aria-label="Load LRC file">
+                </div>
+                <button id="exportBtn" class="btn" disabled>
+                    <img src="assets/download-24x24-%23e3e3e3.svg" alt="" width="20" height="20">
+                    Export
                 </button>
-                <button id="helpBtn" class="btn btn-secondary icon-btn" aria-label="キーボードショートカット">
-                    ❓
+                <button id="darkModeBtn" class="icon-btn" aria-label="Toggle dark mode">
+                    <img src="assets/dark_mode-24x24-%23e3e3e3.svg" alt="" width="24" height="24">
+                </button>
+                <button id="helpBtn" class="icon-btn" aria-label="Help">
+                    <img src="assets/help-24x24-%23e3e3e3.svg" alt="" width="24" height="24">
                 </button>
             </div>
         </div>
 
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar" role="slider" aria-label="Progress">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
+        </div>
+
+        <!-- Playback Controls -->
+        <div class="playback-bar">
+            <div class="playback-controls">
+                <button id="playPauseBtn" class="icon-btn" disabled aria-label="Play/Pause">
+                    <img src="assets/play_arrow-24x24-%23e3e3e3.svg" alt="" width="24" height="24">
+                </button>
+                <button id="stopBtn" class="icon-btn" disabled aria-label="Stop">
+                    <img src="assets/stop-24x24-%23e3e3e3.svg" alt="" width="24" height="24">
+                </button>
+                <button id="rewindBtn" class="icon-btn" disabled aria-label="Rewind 5 seconds">
+                    <img src="assets/chevron_backward-24x24-%23e3e3e3.svg" alt="" width="24" height="24">
+                </button>
+                <button id="forwardBtn" class="icon-btn" disabled aria-label="Forward 5 seconds">
+                    <img src="assets/chevron_forward-24x24-%23e3e3e3.svg" alt="" width="24" height="24">
+                </button>
+            </div>
+            <div class="time-display">
+                <span id="currentTime">00:00.00</span> / <span id="duration">00:00.00</span>
+            </div>
+        </div>
+
         <!-- Tab Navigation -->
-        <nav class="tab-nav" role="tablist" aria-label="タブナビゲーション">
-            <button class="tab-btn active" data-tab="lrc-editor" role="tab" aria-selected="true" aria-controls="lrc-editor-panel">
-                📝 LRCエディタ
+        <nav class="tab-nav" role="tablist" aria-label="Tab navigation">
+            <button class="tab-btn active" data-tab="lyric" role="tab" aria-selected="true" aria-controls="lyric-panel">
+                Lyric
+            </button>
+            <button class="tab-btn" data-tab="syncer" role="tab" aria-selected="false" aria-controls="syncer-panel">
+                Syncer
             </button>
             <button class="tab-btn" data-tab="preview" role="tab" aria-selected="false" aria-controls="preview-panel">
-                👁️ プレビュー
+                Preview
             </button>
             <button class="tab-btn" data-tab="settings" role="tab" aria-selected="false" aria-controls="settings-panel">
-                ⚙️ 設定
+                Settings
             </button>
         </nav>
     </header>
 
     <main>
-        <!-- LRC Editor Tab -->
-        <div id="lrc-editor-panel" class="tab-content active" role="tabpanel" aria-labelledby="lrc-editor-tab" style="display: contents;">
-        <!-- Player Section -->
-        <section class="player-section">
-            <div class="lyrics-header">
-                <h2>🎵 音楽コントロール</h2>
-                <div class="lyrics-controls">
-                    <div class="file-input-wrapper">
-                        <button class="btn btn-secondary">
-                            📁 音楽ファイル
-                        </button>
-                        <input type="file" id="audioInput" accept="audio/*" aria-label="音楽ファイルを選択">
+        <!-- Lyric Tab -->
+        <div id="lyric-panel" class="tab-content active" role="tabpanel" aria-labelledby="lyric-tab">
+            <div class="lyric-tab-content">
+                <div class="lyric-toolbar">
+                    <span style="color: var(--text-secondary); font-size: 0.9rem;">Edit LRC content directly</span>
+                </div>
+                <div class="lyric-textarea-container">
+                    <textarea id="lyricTextarea" class="lyric-textarea" placeholder="[00:00.00]Your lyrics here&#10;&#10;[00:05.00]Second line&#10;&#10;Use format: [mm:ss.xx]Lyric text"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Syncer Tab -->
+        <div id="syncer-panel" class="tab-content" role="tabpanel" aria-labelledby="syncer-tab">
+            <div class="syncer-container">
+                <div class="syncer-toolbar">
+                    <span class="syncer-help"><strong>T</strong> / <strong>Enter</strong>: Set timestamp | <strong>Y</strong>: Empty Timing | <strong>↑</strong> / <strong>↓</strong>: Navigate</span>
+                    <button id="syncerClearBtn" class="btn btn-danger" style="margin-left: auto;">
+                        <img src="assets/delete_sweep-24x24-%23e3e3e3.svg" alt="" width="18" height="18">
+                        Clear All
+                    </button>
+                </div>
+                <div class="syncer-list" id="syncerList" role="listbox" aria-label="Lyrics list">
+                    <div class="empty-state">
+                        <p>No lyrics loaded</p>
+                        <p>Load an LRC file or edit in the Lyric tab</p>
                     </div>
-                    <div class="file-input-wrapper">
-                        <button class="btn btn-secondary">
-                            📝 LRCファイル
-                        </button>
-                        <input type="file" id="lrcInput" accept=".lrc,.txt" aria-label="LRCファイルを選択">
-                    </div>
-                    <button id="exportBtn" class="btn" disabled>
-                        💾 エクスポート
-                    </button>
                 </div>
             </div>
-
-            <div class="audio-container">
-                <audio id="audioPlayer"></audio>
-                <div class="seek-bar-container">
-                    <input type="range" id="seekBar" value="0" min="0" max="100" step="0.1" aria-label="シークバー">
-                </div>
-                <div class="time-display">
-                    <span id="currentTime">00:00.00</span>
-                    <span id="duration">00:00.00</span>
-                </div>
-            </div>
-
-            <div class="playback-controls">
-                <button id="playPauseBtn" disabled aria-label="再生/一時停止">
-                    ▶️ 再生
-                </button>
-                <button id="stopBtn" disabled aria-label="停止">
-                    ⏹️ 停止
-                </button>
-                <button id="rewindBtn" disabled aria-label="5秒戻る">
-                    ⏪ -5s
-                </button>
-                <button id="forwardBtn" disabled aria-label="5秒進む">
-                    ⏩ +5s
-                </button>
-            </div>
-
-            <div class="timestamp-info">
-                <h3>現在のタイムスタンプ</h3>
-                <div class="current-timestamp" id="currentTimestamp">00:00.00</div>
-                <div class="set-timestamp-hint">Enter: 選択行にタイムスタンプ設定</div>
-            </div>
-
-            <div class="file-info" id="fileInfo">
-                音楽ファイルが読み込まれていません
-            </div>
-        </section>
-
-        <!-- Lyrics Editor Section -->
-        <section class="lyrics-section">
-            <div class="lyrics-header">
-                <h2>歌詞エディタ</h2>
-                <div class="lyrics-controls">
-                    <button id="addLineBtn" class="btn btn-secondary">
-                        ➕ 行追加 (Ctrl+N)
-                    </button>
-                    <button id="clearAllBtn" class="btn btn-danger">
-                        🗑️ 全消去
-                    </button>
-                </div>
-            </div>
-
-            <div class="lyrics-list" id="lyricsList" role="listbox" aria-label="歌詞行リスト">
-                <div class="empty-state">
-                    <p>歌詞がありません</p>
-                    <p>LRCファイルを読み込むか、新しい行を追加してください</p>
-                </div>
-            </div>
-        </section>
         </div>
 
         <!-- Preview Tab -->
         <div id="preview-panel" class="tab-content" role="tabpanel" aria-labelledby="preview-tab">
-            <section class="lyrics-section" style="grid-column: 1 / -1;">
-                <div class="lyrics-header">
-                    <h2>👁️ プレビュー</h2>
-                </div>
-                <div id="previewContent" class="lyrics-list">
+            <div class="preview-container">
+                <div id="previewList" class="preview-list">
                     <div class="empty-state">
-                        <p>プレビューを表示するには、歌詞を追加してください</p>
+                        <p>No lyrics to preview</p>
+                        <p>Load lyrics in the Lyric or Syncer tab</p>
                     </div>
                 </div>
-            </section>
+            </div>
         </div>
 
         <!-- Settings Tab -->
         <div id="settings-panel" class="tab-content" role="tabpanel" aria-labelledby="settings-tab">
-            <section class="lyrics-section" style="grid-column: 1 / -1;">
-                <div class="lyrics-header">
-                    <h2>⚙️ 設定</h2>
-                </div>
-                <div class="lyrics-list" style="padding: 1.5rem;">
-                    <div style="margin-bottom: 1.5rem;">
-                        <h3 style="margin-bottom: 0.5rem; color: var(--text-secondary);">キーボードショートカット</h3>
-                        <div class="shortcuts-list">
-                            <span class="shortcut-key">Space</span>
-                            <span class="shortcut-desc">再生/一時停止</span>
+            <div class="settings-container">
+                <div class="settings-section">
+                    <h2>Keyboard Shortcuts</h2>
+                    <div class="shortcuts-list">
+                        <span class="shortcut-key">Space / K</span>
+                        <span class="shortcut-desc">Play/Pause</span>
 
-                            <span class="shortcut-key">Enter</span>
-                            <span class="shortcut-desc">選択行にタイムスタンプ設定</span>
+                        <span class="shortcut-key">← / →</span>
+                        <span class="shortcut-desc">Rewind/Forward 5 seconds</span>
 
-                            <span class="shortcut-key">Arrow Up / ↓</span>
-                            <span class="shortcut-desc">前/次の行を選択</span>
+                        <span class="shortcut-key">Ctrl + ← / →</span>
+                        <span class="shortcut-desc">Previous/Next tab</span>
 
-                            <span class="shortcut-key">Delete / Backspace</span>
-                            <span class="shortcut-desc">選択行を削除</span>
+                        <span class="shortcut-key">Ctrl + 1/2/3/4</span>
+                        <span class="shortcut-desc">Switch to Lyric/Syncer/Preview/Settings</span>
 
-                            <span class="shortcut-key">Ctrl + N</span>
-                            <span class="shortcut-desc">新しい行を追加</span>
+                        <span class="shortcut-key">Ctrl + S</span>
+                        <span class="shortcut-desc">Export LRC</span>
 
-                            <span class="shortcut-key">Ctrl + S</span>
-                            <span class="shortcut-desc">LRCファイルとしてエクスポート</span>
+                        <span class="shortcut-key">Ctrl + D</span>
+                        <span class="shortcut-desc">Toggle dark mode</span>
 
-                            <span class="shortcut-key">Ctrl + D</span>
-                            <span class="shortcut-desc">ダークモード切り替え</span>
+                        <span class="shortcut-key">Esc</span>
+                        <span class="shortcut-desc">Close modal</span>
 
-                            <span class="shortcut-key">← / →</span>
-                            <span class="shortcut-desc">5秒戻る/進む</span>
-                        </div>
-                    </div>
+                        <span class="shortcut-key">T / Enter</span>
+                        <span class="shortcut-desc">Set timestamp (Syncer only)</span>
 
-                    <div style="margin-bottom: 1.5rem;">
-                        <h3 style="margin-bottom: 0.5rem; color: var(--text-secondary);">テーマ設定</h3>
-                        <div style="display: flex; gap: 1rem; align-items: center;">
-                            <button id="settingsDarkModeBtn" class="btn btn-secondary">
-                                🌙 ダークモード切り替え
-                            </button>
-                            <span style="color: var(--text-secondary);">現在のモード: <span id="currentModeDisplay">ライト</span></span>
-                        </div>
-                    </div>
+                        <span class="shortcut-key">Y</span>
+                        <span class="shortcut-desc">Insert Empty Timing (Syncer only)</span>
 
-                    <div style="margin-bottom: 1.5rem;">
-                        <h3 style="margin-bottom: 0.5rem; color: var(--text-secondary);">情報</h3>
-                        <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">Timed Lyrics Editor v1.0</p>
-                        <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">完全に静的なブラウザベースのタイムド歌詞エディタ</p>
-                        <p style="color: var(--text-secondary);">外部依存なし・ビルド不要・単一HTMLファイル</p>
-                    </div>
-
-                    <div>
-                        <h3 style="margin-bottom: 0.5rem; color: var(--text-secondary);">データ管理</h3>
-                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                            <button id="clearLocalStorageBtn" class="btn btn-danger btn-secondary">
-                                🗑️ ローカルデータを消去
-                            </button>
-                        </div>
-                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">
-                            ダークモードの設定など、ブラウザに保存されているデータを消去します。
-                        </p>
+                        <span class="shortcut-key">↑ / ↓</span>
+                        <span class="shortcut-desc">Previous/Next line (Syncer only)</span>
                     </div>
                 </div>
-            </section>
+
+                <div class="settings-section">
+                    <h2>Theme</h2>
+                    <div class="settings-row">
+                        <button id="settingsDarkModeBtn" class="btn">
+                            <img src="assets/dark_mode-24x24-%23e3e3e3.svg" alt="" width="20" height="20">
+                            Toggle Dark Mode
+                        </button>
+                        <span class="settings-label">Current: <span id="currentModeDisplay">Light</span></span>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h2>Info</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">Timed Lyrics Editor v2.0</p>
+                    <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">Minimal editor-style timed lyrics editor with tabbed interface</p>
+                    <p style="color: var(--text-secondary);">No dependencies • No build • Single HTML file</p>
+                </div>
+
+                <div class="settings-section">
+                    <h2>Data Management</h2>
+                    <button id="clearLocalStorageBtn" class="btn btn-danger">
+                        <img src="assets/delete_sweep-24x24-%23e3e3e3.svg" alt="" width="18" height="18">
+                        Clear Local Data
+                    </button>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">
+                        Clears dark mode preference and other stored data
+                    </p>
+                </div>
+            </div>
         </div>
     </main>
 
     <!-- Help Modal -->
     <div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
         <div class="modal">
-            <h2 id="helpTitle">ヘルプ</h2>
+            <h2 id="helpTitle">Help</h2>
             <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-                Timed Lyrics Editorの使い方：
+                How to use Timed Lyrics Editor:
             </p>
-            <div style="margin-bottom: 1.5rem;">
-                <p style="margin-bottom: 0.5rem;"><strong>1. 音楽ファイルを読み込む：</strong>「📁 音楽ファイル」ボタンをクリックして音声ファイルを選択してください。</p>
-                <p style="margin-bottom: 0.5rem;"><strong>2. 歌詞を追加：</strong>「➕ 行追加」ボタンまたはCtrl+Nで新しい行を追加します。</p>
-                <p style="margin-bottom: 0.5rem;"><strong>3. タイムスタンプを設定：</strong>音楽を再生中に、歌詞が始まるタイミングでEnterキーを押すと、選択中の行に現在の再生時間が設定されます。</p>
-                <p style="margin-bottom: 0.5rem;"><strong>4. エクスポート：</strong>「💾 エクスポート」ボタンまたはCtrl+SでLRCファイルとして保存します。</p>
-            </div>
-            <p style="margin-bottom: 1rem; color: var(--text-secondary);">
-                詳しいキーボードショートカットは「⚙️ 設定」タブを確認してください。
+            <p style="margin-bottom: 0.5rem;"><strong>1. Load Audio:</strong> Click the "Audio" button to load an audio file.</p>
+            <p style="margin-bottom: 0.5rem;"><strong>2. Edit Lyrics:</strong> Use the Lyric tab to edit LRC content directly or load an existing LRC file.</p>
+            <p style="margin-bottom: 0.5rem;"><strong>3. Sync Timestamps:</strong> In the Syncer tab, play audio and press T when lyrics start.</p>
+            <p style="margin-bottom: 0.5rem;"><strong>4. Preview:</strong> Check the Preview tab to see synchronized lyrics.</p>
+            <p style="margin-bottom: 1rem;"><strong>5. Export:</strong> Click "Export" or press Ctrl+S to save LRC file.</p>
+            <p style="color: var(--text-secondary);">
+                See Settings tab for detailed keyboard shortcuts.
             </p>
             <div class="modal-close">
-                <button id="closeHelpBtn" class="btn">閉じる</button>
+                <button id="closeHelpBtn" class="btn">Close</button>
             </div>
         </div>
     </div>
+
+    <audio id="audioPlayer"></audio>
 
     <script>
         // ==================== State Management ====================
@@ -783,7 +879,7 @@
             currentPlaybackIndex: -1,
             isPlaying: false,
             darkMode: false,
-            activeTab: 'lrc-editor'
+            activeTab: 'lyric'
         };
 
         // Animation loop state
@@ -799,21 +895,21 @@
         const helpBtn = document.getElementById('helpBtn');
         const helpModal = document.getElementById('helpModal');
         const closeHelpBtn = document.getElementById('closeHelpBtn');
-        const seekBar = document.getElementById('seekBar');
+        const progressBar = document.getElementById('progressBar');
+        const progressBarFill = document.getElementById('progressBarFill');
         const currentTimeDisplay = document.getElementById('currentTime');
         const durationDisplay = document.getElementById('duration');
-        const currentTimestampDisplay = document.getElementById('currentTimestamp');
         const playPauseBtn = document.getElementById('playPauseBtn');
+        const playPauseImg = playPauseBtn.querySelector('img');
         const stopBtn = document.getElementById('stopBtn');
         const rewindBtn = document.getElementById('rewindBtn');
         const forwardBtn = document.getElementById('forwardBtn');
-        const fileInfo = document.getElementById('fileInfo');
-        const lyricsList = document.getElementById('lyricsList');
-        const addLineBtn = document.getElementById('addLineBtn');
-        const clearAllBtn = document.getElementById('clearAllBtn');
+        const lyricTextarea = document.getElementById('lyricTextarea');
+        const syncerList = document.getElementById('syncerList');
+        const syncerClearBtn = document.getElementById('syncerClearBtn');
+        const previewList = document.getElementById('previewList');
         const tabBtns = document.querySelectorAll('.tab-btn');
         const tabContents = document.querySelectorAll('.tab-content');
-        const previewContent = document.getElementById('previewContent');
         const settingsDarkModeBtn = document.getElementById('settingsDarkModeBtn');
         const currentModeDisplay = document.getElementById('currentModeDisplay');
         const clearLocalStorageBtn = document.getElementById('clearLocalStorageBtn');
@@ -822,7 +918,7 @@
         function parseLRC(text) {
             const lines = text.split('\n');
             const parsedLyrics = [];
-            const timeRegex = /\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\](.*)/;
+            const timeRegex = /^\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\](.*)$/;
 
             lines.forEach((line, index) => {
                 const trimmedLine = line.trim();
@@ -885,39 +981,36 @@
             return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
         }
 
-        function parseTimeInput(timeStr) {
-            if (!timeStr || !timeStr.trim()) {
-                return null;
-            }
-            const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})(?:\.(\d{2}))?$/);
-            if (match) {
-                const minutes = parseInt(match[1], 10);
-                const seconds = parseInt(match[2], 10);
-                const ms = match[3] ? parseInt(match[3], 10) : 0;
-                return minutes * 60 + seconds + ms / 100;
-            }
-            return null;
+        // ==================== UI Rendering ====================
+        function updateLyricsFromTextarea() {
+            const text = lyricTextarea.value;
+            state.lyrics = parseLRC(text);
+            state.selectedLineIndex = -1;
+            state.currentPlaybackIndex = -1;
+            renderSyncer();
+            renderPreview();
+            updateExportButton();
         }
 
-        // ==================== UI Rendering ====================
-        function renderLyrics() {
+        function updateTextareaFromLyrics() {
+            lyricTextarea.value = serializeLRC(state.lyrics);
+        }
+
+        function renderSyncer() {
             if (state.lyrics.length === 0) {
-                lyricsList.innerHTML = `
+                syncerList.innerHTML = `
                     <div class="empty-state">
-                        <p>歌詞がありません</p>
-                        <p>LRCファイルを読み込むか、新しい行を追加してください</p>
+                        <p>No lyrics loaded</p>
+                        <p>Load an LRC file or edit in the Lyric tab</p>
                     </div>
                 `;
-                exportBtn.disabled = true;
                 return;
             }
 
-            exportBtn.disabled = false;
-
-            lyricsList.innerHTML = state.lyrics.map((lyric, index) => {
+            syncerList.innerHTML = state.lyrics.map((lyric, index) => {
                 const isSelected = index === state.selectedLineIndex;
                 const isCurrentPlayback = index === state.currentPlaybackIndex;
-                const classes = ['lyric-row'];
+                const classes = ['syncer-row'];
                 if (isSelected) classes.push('selected');
                 if (isCurrentPlayback) classes.push('current-playback');
 
@@ -927,30 +1020,22 @@
                          role="option"
                          aria-selected="${isSelected}">
                         <span class="line-number">${index + 1}</span>
-                        <input type="text"
-                               class="timestamp-input"
-                               value="${lyric.time !== null ? formatTime(lyric.time) : ''}"
-                               data-index="${index}"
-                               aria-label="行${index + 1}のタイムスタンプ">
-                        <input type="text"
-                               class="text-input"
-                               value="${escapeHtml(lyric.text)}"
-                               data-index="${index}"
-                               aria-label="行${index + 1}の歌詞テキスト">
-                        <button class="delete-btn"
+                        <div class="timestamp-display">${lyric.time !== null ? formatTime(lyric.time) : '--:--.--'}</div>
+                        <div class="text-display" title="${escapeHtml(lyric.text)}">${escapeHtml(lyric.text) || '<em style="color: var(--text-secondary);">(empty)</em>'}</div>
+                        <button class="syncer-delete-btn"
                                 data-index="${index}"
-                                aria-label="行${index + 1}を削除"
-                                title="削除">×</button>
+                                aria-label="Delete line ${index + 1}"
+                                title="Delete">×</button>
                     </div>
                 `;
             }).join('');
 
             // Attach event listeners to new elements
-            attachLyricRowListeners();
+            attachSyncerListeners();
 
             // Scroll selected row into view
             if (state.selectedLineIndex >= 0) {
-                const selectedRow = lyricsList.querySelector(`[data-index="${state.selectedLineIndex}"]`);
+                const selectedRow = syncerList.querySelector(`[data-index="${state.selectedLineIndex}"]`);
                 if (selectedRow) {
                     selectedRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
@@ -959,34 +1044,49 @@
 
         function renderPreview() {
             if (state.lyrics.length === 0) {
-                previewContent.innerHTML = `
+                previewList.innerHTML = `
                     <div class="empty-state">
-                        <p>プレビューを表示するには、歌詞を追加してください</p>
+                        <p>No lyrics to preview</p>
+                        <p>Load lyrics in the Lyric or Syncer tab</p>
                     </div>
                 `;
                 return;
             }
 
             // Sort lyrics by timestamp for preview
-            const sortedLyrics = [...state.lyrics].sort((a, b) => {
-                if (a.time === null && b.time === null) return 0;
-                if (a.time === null) return 1;
-                if (b.time === null) return -1;
-                return a.time - b.time;
-            });
+            const sortedLyrics = [...state.lyrics]
+                .map((lyric, originalIndex) => ({ ...lyric, originalIndex }))
+                .sort((a, b) => {
+                    if (a.time === null && b.time === null) return 0;
+                    if (a.time === null) return 1;
+                    if (b.time === null) return -1;
+                    return a.time - b.time;
+                });
 
-            previewContent.innerHTML = sortedLyrics.map((lyric, index) => {
-                const isCurrentPlayback = state.currentPlaybackIndex !== -1 && lyric.id === state.lyrics[state.currentPlaybackIndex].id;
-                const classes = ['lyric-row'];
-                if (isCurrentPlayback) classes.push('current-playback');
+            const currentLyric = state.currentPlaybackIndex >= 0 ? state.lyrics[state.currentPlaybackIndex] : null;
+
+            previewList.innerHTML = sortedLyrics.map((lyric, index) => {
+                const isCurrent = currentLyric && lyric.id === currentLyric.id;
+                const isPast = !isCurrent && lyric.time !== null && currentLyric && 
+                              currentLyric.time !== null && lyric.time < currentLyric.time;
+                const classes = ['preview-line'];
+                if (isCurrent) classes.push('current');
+                else if (isPast) classes.push('past');
+                if (!lyric.text) classes.push('empty');
 
                 return `
-                    <div class="${classes.join(' ')}" style="grid-template-columns: 100px 1fr;">
-                        <span class="line-number">${lyric.time !== null ? formatTime(lyric.time) : '--:--.--'}</span>
-                        <span style="font-size: 1.1rem; padding: 0.4rem;">${escapeHtml(lyric.text) || '<em style="color: var(--text-secondary);">（空行）</em>'}</span>
+                    <div class="${classes.join(' ')}">
+                        ${lyric.time !== null ? formatTime(lyric.time) : '--:--'}<br>
+                        ${escapeHtml(lyric.text) || '<em>(instrumental)</em>'}
                     </div>
                 `;
             }).join('');
+
+            // Scroll current line into view
+            const currentLine = previewList.querySelector('.preview-line.current');
+            if (currentLine) {
+                currentLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
 
         function switchTab(tabId) {
@@ -1003,16 +1103,17 @@
             tabContents.forEach(content => {
                 const isActive = content.id === `${tabId}-panel`;
                 content.classList.toggle('active', isActive);
-                if (isActive) {
-                    content.style.display = content.id === 'lrc-editor-panel' ? 'contents' : 'block';
-                } else {
-                    content.style.display = 'none';
-                }
             });
 
-            // Update preview when switching to preview tab
-            if (tabId === 'preview') {
+            // Update views when switching tabs
+            if (tabId === 'syncer') {
+                updateLyricsFromTextarea();
+                renderSyncer();
+            } else if (tabId === 'preview') {
+                updateLyricsFromTextarea();
                 renderPreview();
+            } else if (tabId === 'lyric') {
+                updateTextareaFromLyrics();
             }
         }
 
@@ -1022,96 +1123,45 @@
             return div.innerHTML;
         }
 
-        function attachLyricRowListeners() {
+        function attachSyncerListeners() {
             // Row selection
-            lyricsList.querySelectorAll('.lyric-row').forEach(row => {
+            syncerList.querySelectorAll('.syncer-row').forEach(row => {
                 row.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('delete-btn') || 
-                        e.target.classList.contains('timestamp-input') ||
-                        e.target.classList.contains('text-input')) {
+                    if (e.target.classList.contains('syncer-delete-btn')) {
                         return;
                     }
                     const index = parseInt(row.dataset.index, 10);
-                    selectLine(index);
-                });
-            });
-
-            // Timestamp input
-            lyricsList.querySelectorAll('.timestamp-input').forEach(input => {
-                input.addEventListener('change', (e) => {
-                    const index = parseInt(e.target.dataset.index, 10);
-                    const time = parseTimeInput(e.target.value);
-                    state.lyrics[index].time = time;
-                    if (time !== null) {
-                        // Seek to timestamp
-                        audioPlayer.currentTime = time;
-                    }
-                });
-
-                input.addEventListener('focus', () => {
-                    const index = parseInt(input.dataset.index, 10);
-                    selectLine(index);
-                });
-            });
-
-            // Text input
-            lyricsList.querySelectorAll('.text-input').forEach(input => {
-                input.addEventListener('input', (e) => {
-                    const index = parseInt(e.target.dataset.index, 10);
-                    state.lyrics[index].text = e.target.value;
-                });
-
-                input.addEventListener('focus', () => {
-                    const index = parseInt(input.dataset.index, 10);
-                    selectLine(index);
+                    selectSyncerLine(index);
                 });
             });
 
             // Delete button
-            lyricsList.querySelectorAll('.delete-btn').forEach(btn => {
+            syncerList.querySelectorAll('.syncer-delete-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const index = parseInt(e.target.dataset.index, 10);
-                    deleteLine(index);
+                    deleteSyncerLine(index);
                 });
             });
         }
 
-        function selectLine(index) {
+        function selectSyncerLine(index) {
             if (index < 0 || index >= state.lyrics.length) {
                 state.selectedLineIndex = -1;
             } else {
                 state.selectedLineIndex = index;
             }
-            renderLyrics();
+            renderSyncer();
         }
 
-        function addLine() {
-            const newId = state.lyrics.length > 0 ? Math.max(...state.lyrics.map(l => l.id)) + 1 : Date.now();
-            state.lyrics.push({
-                id: newId,
-                time: null,
-                text: ''
-            });
-            selectLine(state.lyrics.length - 1);
-        }
-
-        function deleteLine(index) {
+        function deleteSyncerLine(index) {
             state.lyrics.splice(index, 1);
             if (state.selectedLineIndex >= state.lyrics.length) {
                 state.selectedLineIndex = state.lyrics.length - 1;
             } else if (state.selectedLineIndex === index) {
                 state.selectedLineIndex = -1;
             }
-            renderLyrics();
-        }
-
-        function clearAllLyrics() {
-            if (confirm('すべての歌詞を削除しますか？')) {
-                state.lyrics = [];
-                state.selectedLineIndex = -1;
-                state.currentPlaybackIndex = -1;
-                renderLyrics();
-            }
+            renderSyncer();
+            updateTextareaFromLyrics();
         }
 
         function setTimestampToSelectedLine() {
@@ -1120,7 +1170,52 @@
             }
             const currentTime = audioPlayer.currentTime;
             state.lyrics[state.selectedLineIndex].time = currentTime;
-            renderLyrics();
+            renderSyncer();
+            updateTextareaFromLyrics();
+
+            // Move to next line
+            if (state.selectedLineIndex < state.lyrics.length - 1) {
+                selectSyncerLine(state.selectedLineIndex + 1);
+            }
+        }
+
+        function insertEmptyTiming() {
+            const currentTime = audioPlayer.currentTime;
+            const newId = state.lyrics.length > 0 ? Math.max(...state.lyrics.map(l => l.id)) + 1 : Date.now();
+            
+            // Insert at selected line position, or at the end
+            const insertIndex = state.selectedLineIndex >= 0 ? state.selectedLineIndex + 1 : state.lyrics.length;
+            
+            state.lyrics.splice(insertIndex, 0, {
+                id: newId,
+                time: currentTime,
+                text: ''
+            });
+
+            selectSyncerLine(insertIndex);
+            renderSyncer();
+            updateTextareaFromLyrics();
+
+            // Move to next line
+            if (insertIndex < state.lyrics.length - 1) {
+                selectSyncerLine(insertIndex + 1);
+            }
+        }
+
+        function clearAllLyrics() {
+            if (confirm('Clear all lyrics?')) {
+                state.lyrics = [];
+                state.selectedLineIndex = -1;
+                state.currentPlaybackIndex = -1;
+                renderSyncer();
+                updateTextareaFromLyrics();
+                renderPreview();
+                updateExportButton();
+            }
+        }
+
+        function updateExportButton() {
+            exportBtn.disabled = state.lyrics.length === 0;
         }
 
         // ==================== Audio Player Controls ====================
@@ -1157,7 +1252,7 @@
                 const newIndex = -1;
                 if (newIndex !== state.currentPlaybackIndex) {
                     state.currentPlaybackIndex = newIndex;
-                    renderLyrics();
+                    renderSyncer();
                     if (state.activeTab === 'preview') {
                         renderPreview();
                     }
@@ -1179,7 +1274,7 @@
             // Only re-render if the index changed
             if (newIndex !== state.currentPlaybackIndex) {
                 state.currentPlaybackIndex = newIndex;
-                renderLyrics();
+                renderSyncer();
                 if (state.activeTab === 'preview') {
                     renderPreview();
                 }
@@ -1191,11 +1286,15 @@
             // Throttle updates to 50ms (20fps) for display
             if (timestamp - lastTime >= 50) {
                 if (state.isPlaying) {
-                    // Update time displays and seek bar
+                    // Update time displays and progress bar
                     const currentTime = audioPlayer.currentTime;
+                    const duration = audioPlayer.duration || 0;
+                    
                     currentTimeDisplay.textContent = formatTime(currentTime);
-                    currentTimestampDisplay.textContent = formatTime(currentTime);
-                    seekBar.value = currentTime;
+                    
+                    // Update progress bar
+                    const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+                    progressBarFill.style.width = `${progress}%`;
 
                     // Update playback highlight
                     updatePlaybackHighlight();
@@ -1235,33 +1334,24 @@
 
             audioPlayer.onloadedmetadata = () => {
                 durationDisplay.textContent = formatTime(audioPlayer.duration);
-                seekBar.max = audioPlayer.duration;
-                // Update time display to show initial position
-                currentTimeDisplay.textContent = formatTime(0);
-                currentTimestampDisplay.textContent = formatTime(0);
-                seekBar.value = 0;
                 enablePlaybackControls(true);
-                fileInfo.innerHTML = `
-                    <span><strong>ファイル:</strong> ${file.name}</span>
-                    <span><strong>サイズ:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB</span>
-                    <span><strong>長さ:</strong> ${formatTime(audioPlayer.duration)}</span>
-                `;
             };
         }
 
         async function loadLRCFile(file) {
             const text = await file.text();
-            state.lyrics = parseLRC(text);
-            state.selectedLineIndex = -1;
-            state.currentPlaybackIndex = -1;
-            renderLyrics();
+            lyricTextarea.value = text;
+            updateLyricsFromTextarea();
         }
 
         function exportLRC() {
             if (state.lyrics.length === 0) {
-                alert('エクスポートする歌詞がありません');
+                alert('No lyrics to export');
                 return;
             }
+
+            // Ensure we have the latest content from textarea
+            updateLyricsFromTextarea();
 
             const lrcContent = serializeLRC(state.lyrics);
             const blob = new Blob(['\ufeff' + lrcContent], { type: 'text/plain;charset=utf-8' });
@@ -1283,15 +1373,23 @@
             forwardBtn.disabled = !enabled;
         }
 
+        function updatePlayPauseIcon() {
+            if (state.isPlaying) {
+                playPauseImg.src = 'assets/pause-24x24-%23e3e3e3.svg';
+            } else {
+                playPauseImg.src = 'assets/play_arrow-24x24-%23e3e3e3.svg';
+            }
+        }
+
         // ==================== Dark Mode ====================
         function toggleDarkMode() {
             state.darkMode = !state.darkMode;
             if (state.darkMode) {
                 document.body.classList.add('dark-mode');
-                darkModeBtn.textContent = '☀️';
+                darkModeBtn.querySelector('img').src = 'assets/light_mode-24x24-%23e3e3e3.svg';
             } else {
                 document.body.classList.remove('dark-mode');
-                darkModeBtn.textContent = '🌙';
+                darkModeBtn.querySelector('img').src = 'assets/dark_mode-24x24-%23e3e3e3.svg';
             }
             localStorage.setItem('darkMode', state.darkMode.toString());
             updateModeDisplay();
@@ -1299,7 +1397,7 @@
 
         function updateModeDisplay() {
             if (currentModeDisplay) {
-                currentModeDisplay.textContent = state.darkMode ? 'ダーク' : 'ライト';
+                currentModeDisplay.textContent = state.darkMode ? 'Dark' : 'Light';
             }
         }
 
@@ -1313,15 +1411,15 @@
 
             if (state.darkMode) {
                 document.body.classList.add('dark-mode');
-                darkModeBtn.textContent = '☀️';
+                darkModeBtn.querySelector('img').src = 'assets/light_mode-24x24-%23e3e3e3.svg';
             }
             updateModeDisplay();
         }
 
         function clearLocalStorage() {
-            if (confirm('ローカルストレージに保存されているデータを消去しますか？\n（ダークモードの設定などがリセットされます）')) {
+            if (confirm('Clear all local data?\n(Dark mode preference and other stored data will be reset)')) {
                 localStorage.clear();
-                alert('ローカルデータを消去しました。');
+                alert('Local data cleared.');
             }
         }
 
@@ -1342,30 +1440,31 @@
         });
 
         // Audio player events
-        // Note: timeupdate replaced by animationLoop for smoother updates
-
         audioPlayer.addEventListener('play', () => {
             state.isPlaying = true;
-            playPauseBtn.textContent = '⏸️ 一時停止';
+            updatePlayPauseIcon();
             startAnimationLoop();
         });
 
         audioPlayer.addEventListener('pause', () => {
             state.isPlaying = false;
-            playPauseBtn.textContent = '▶️ 再生';
+            updatePlayPauseIcon();
         });
 
         audioPlayer.addEventListener('ended', () => {
             state.isPlaying = false;
-            playPauseBtn.textContent = '▶️ 再生';
+            updatePlayPauseIcon();
         });
 
         // Initialize animation loop
         startAnimationLoop();
 
-        // Seek bar
-        seekBar.addEventListener('input', (e) => {
-            audioPlayer.currentTime = parseFloat(e.target.value);
+        // Progress bar click
+        progressBar.addEventListener('click', (e) => {
+            if (!state.audioFile) return;
+            const rect = progressBar.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            audioPlayer.currentTime = percent * audioPlayer.duration;
         });
 
         // Playback controls
@@ -1374,15 +1473,19 @@
         rewindBtn.addEventListener('click', rewind);
         forwardBtn.addEventListener('click', forward);
 
-        // Lyrics controls
-        addLineBtn.addEventListener('click', addLine);
-        clearAllBtn.addEventListener('click', clearAllLyrics);
+        // Lyric textarea
+        lyricTextarea.addEventListener('input', () => {
+            updateLyricsFromTextarea();
+        });
+
+        // Syncer controls
+        syncerClearBtn.addEventListener('click', clearAllLyrics);
+
+        // Export
         exportBtn.addEventListener('click', exportLRC);
 
         // Dark mode toggle
         darkModeBtn.addEventListener('click', toggleDarkMode);
-
-        // Settings dark mode toggle
         settingsDarkModeBtn.addEventListener('click', toggleDarkMode);
 
         // Clear local storage
@@ -1413,7 +1516,6 @@
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            // Ignore shortcuts when typing in input fields
             const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
             
             // Handle Escape key even when typing (to close modal)
@@ -1425,6 +1527,53 @@
                 }
             }
 
+            // Tab-specific shortcuts
+            if (state.activeTab === 'syncer' && !isTyping) {
+                // T key: Set timestamp
+                if (e.key === 't' || e.key === 'T') {
+                    e.preventDefault();
+                    setTimestampToSelectedLine();
+                    return;
+                }
+
+                // Y key: Insert Empty Timing
+                if (e.key === 'y' || e.key === 'Y') {
+                    e.preventDefault();
+                    insertEmptyTiming();
+                    return;
+                }
+
+                // Enter key: Same as T
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    setTimestampToSelectedLine();
+                    return;
+                }
+
+                // Arrow Up: Select previous line
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (state.selectedLineIndex > 0) {
+                        selectSyncerLine(state.selectedLineIndex - 1);
+                    } else if (state.selectedLineIndex === -1 && state.lyrics.length > 0) {
+                        selectSyncerLine(0);
+                    }
+                    return;
+                }
+
+                // Arrow Down: Select next line
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (state.selectedLineIndex < state.lyrics.length - 1) {
+                        selectSyncerLine(state.selectedLineIndex + 1);
+                    } else if (state.selectedLineIndex === -1 && state.lyrics.length > 0) {
+                        selectSyncerLine(0);
+                    }
+                    return;
+                }
+            }
+
+            // Ignore other shortcuts when typing in Lyric tab (standard text editor behavior)
             if (isTyping) {
                 // Allow Ctrl+S to save even when typing
                 if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -1432,27 +1581,21 @@
                     exportLRC();
                     return;
                 }
-                // Allow Enter to commit timestamp
-                if (e.key === 'Enter' && e.target.classList.contains('timestamp-input')) {
+                // Allow Ctrl+D to toggle dark mode even when typing
+                if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
                     e.preventDefault();
-                    e.target.blur();
+                    toggleDarkMode();
                     return;
                 }
                 // Ignore other shortcuts when typing
                 return;
             }
 
+            // Global shortcuts
             // Ctrl/Cmd + S: Export
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
                 exportLRC();
-                return;
-            }
-
-            // Ctrl/Cmd + N: Add line
-            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-                e.preventDefault();
-                addLine();
                 return;
             }
 
@@ -1463,48 +1606,10 @@
                 return;
             }
 
-            // Space: Play/Pause
-            if (e.key === ' ') {
+            // Space / K: Play/Pause
+            if (e.key === ' ' || e.key === 'k' || e.key === 'K') {
                 e.preventDefault();
                 togglePlayPause();
-                return;
-            }
-
-            // Enter: Set timestamp to selected line
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                setTimestampToSelectedLine();
-                return;
-            }
-
-            // Arrow Up: Select previous line
-            if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                if (state.selectedLineIndex > 0) {
-                    selectLine(state.selectedLineIndex - 1);
-                } else if (state.selectedLineIndex === -1 && state.lyrics.length > 0) {
-                    selectLine(0);
-                }
-                return;
-            }
-
-            // Arrow Down: Select next line
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                if (state.selectedLineIndex < state.lyrics.length - 1) {
-                    selectLine(state.selectedLineIndex + 1);
-                } else if (state.selectedLineIndex === -1 && state.lyrics.length > 0) {
-                    selectLine(0);
-                }
-                return;
-            }
-
-            // Delete/Backspace: Delete selected line
-            if (e.key === 'Delete' || e.key === 'Backspace') {
-                e.preventDefault();
-                if (state.selectedLineIndex >= 0) {
-                    deleteLine(state.selectedLineIndex);
-                }
                 return;
             }
 
@@ -1521,12 +1626,44 @@
                 forward();
                 return;
             }
+
+            // Ctrl/Cmd + Left: Previous tab
+            if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowLeft') {
+                e.preventDefault();
+                const tabs = ['lyric', 'syncer', 'preview', 'settings'];
+                const currentIndex = tabs.indexOf(state.activeTab);
+                const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+                switchTab(tabs[prevIndex]);
+                return;
+            }
+
+            // Ctrl/Cmd + Right: Next tab
+            if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowRight') {
+                e.preventDefault();
+                const tabs = ['lyric', 'syncer', 'preview', 'settings'];
+                const currentIndex = tabs.indexOf(state.activeTab);
+                const nextIndex = (currentIndex + 1) % tabs.length;
+                switchTab(tabs[nextIndex]);
+                return;
+            }
+
+            // Ctrl/Cmd + 1/2/3/4: Switch to specific tab
+            if ((e.ctrlKey || e.metaKey) && (e.key === '1' || e.key === '2' || e.key === '3' || e.key === '4')) {
+                e.preventDefault();
+                const tabs = ['lyric', 'syncer', 'preview', 'settings'];
+                const tabIndex = parseInt(e.key) - 1;
+                if (tabIndex >= 0 && tabIndex < tabs.length) {
+                    switchTab(tabs[tabIndex]);
+                }
+                return;
+            }
         });
 
         // ==================== Initialization ====================
         function init() {
             loadDarkModePreference();
-            renderLyrics();
+            updateLyricsFromTextarea();
+            updateExportButton();
         }
 
         init();
