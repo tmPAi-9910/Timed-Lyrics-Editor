@@ -439,37 +439,102 @@
             border: 1px solid var(--border-color);
             border-radius: 4px;
             background-color: var(--bg-secondary);
-            padding: 2rem;
-            text-align: center;
+            padding: 2rem 1rem;
+            scroll-behavior: smooth;
         }
 
         .preview-line {
-            padding: 0.5rem 1rem;
-            margin: 0.25rem 0;
+            padding: 0.75rem 1.5rem;
+            margin: 0.5rem auto;
             font-size: 1.1rem;
             color: var(--text-secondary);
-            transition: all 0.3s ease;
-            opacity: 0.3;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0.4;
             transform: scale(0.95);
+            max-width: 800px;
+            border-radius: 4px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            letter-spacing: 0.3px;
+            cursor: default;
+        }
+
+        .preview-line:hover:not(.current):not(.empty) {
+            opacity: 0.7;
+            transform: scale(0.97);
+            background-color: var(--bg-tertiary);
+        }
+
+        .preview-line .timestamp {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 0.25rem;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
         }
 
         .preview-line.current {
             opacity: 1;
             transform: scale(1);
             color: var(--text-primary);
+            font-weight: 500;
+            font-size: 1.4rem;
+            padding: 1rem 2rem;
+            background-color: var(--bg-tertiary);
+            border-left: 3px solid var(--text-primary);
+            box-shadow: 0 0 24px rgba(227, 227, 227, 0.15),
+                        0 0 48px rgba(227, 227, 227, 0.08),
+                        0 4px 12px rgba(0, 0, 0, 0.1);
+            animation: fadeInGlow 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dark-mode .preview-line.current {
+            box-shadow: 0 0 24px rgba(227, 227, 227, 0.2),
+                        0 0 48px rgba(227, 227, 227, 0.1),
+                        0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .preview-line.current .timestamp {
+            opacity: 0.9;
+            color: var(--text-primary);
             font-weight: 600;
-            font-size: 1.3rem;
-            text-shadow: 0 0 20px var(--text-primary);
+        }
+
+        @keyframes fadeInGlow {
+            from {
+                opacity: 0.3;
+                transform: scale(0.95);
+                filter: blur(2px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+                filter: blur(0);
+            }
         }
 
         .preview-line.past {
-            opacity: 0.6;
+            opacity: 0.5;
+            font-size: 1rem;
+        }
+
+        .preview-line.future {
+            opacity: 0.3;
+            font-size: 1rem;
         }
 
         .preview-line.empty {
-            opacity: 0.3;
+            opacity: 0.2;
             font-style: italic;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+            color: var(--text-secondary);
+            border-left: 2px solid var(--border-color);
+        }
+
+        .preview-line.empty .timestamp {
+            opacity: 0.5;
         }
 
         /* Settings Tab */
@@ -624,10 +689,22 @@
 
             .preview-line {
                 font-size: 1rem;
+                padding: 0.5rem 1rem;
+                max-width: 100%;
             }
 
             .preview-line.current {
-                font-size: 1.1rem;
+                font-size: 1.2rem;
+                padding: 0.75rem 1.5rem;
+            }
+
+            .preview-line .timestamp {
+                font-size: 0.75rem;
+            }
+
+            .preview-line.empty {
+                font-size: 0.75rem;
+                padding: 0.4rem 0.75rem;
             }
         }
 
@@ -1064,28 +1141,54 @@
                 });
 
             const currentLyric = state.currentPlaybackIndex >= 0 ? state.lyrics[state.currentPlaybackIndex] : null;
+            const currentTime = audioPlayer.currentTime;
+
+            // Track previous current line ID for animation
+            const previousCurrentLineId = previewList.dataset.currentLineId;
+            const currentLyricId = currentLyric ? currentLyric.id : null;
 
             previewList.innerHTML = sortedLyrics.map((lyric, index) => {
                 const isCurrent = currentLyric && lyric.id === currentLyric.id;
-                const isPast = !isCurrent && lyric.time !== null && currentLyric && 
-                              currentLyric.time !== null && lyric.time < currentLyric.time;
+                const isPast = !isCurrent && lyric.time !== null && currentTime !== null &&
+                              lyric.time < currentTime;
+                const isFuture = !isCurrent && !isPast && lyric.time !== null;
                 const classes = ['preview-line'];
                 if (isCurrent) classes.push('current');
                 else if (isPast) classes.push('past');
+                else if (isFuture) classes.push('future');
                 if (!lyric.text) classes.push('empty');
 
+                const timestampHtml = lyric.time !== null
+                    ? `<span class="timestamp">${formatTime(lyric.time)}</span>`
+                    : `<span class="timestamp">--:--.--</span>`;
+
+                const textHtml = lyric.text
+                    ? escapeHtml(lyric.text)
+                    : '<em>(instrumental)</em>';
+
                 return `
-                    <div class="${classes.join(' ')}">
-                        ${lyric.time !== null ? formatTime(lyric.time) : '--:--'}<br>
-                        ${escapeHtml(lyric.text) || '<em>(instrumental)</em>'}
+                    <div class="${classes.join(' ')}" data-line-id="${lyric.id}">
+                        ${timestampHtml}
+                        ${textHtml}
                     </div>
                 `;
             }).join('');
 
-            // Scroll current line into view
-            const currentLine = previewList.querySelector('.preview-line.current');
-            if (currentLine) {
-                currentLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Update current line ID for next render
+            previewList.dataset.currentLineId = currentLyricId || '';
+
+            // Smooth scroll to current line only when it changes
+            if (currentLyric && currentLyricId !== previousCurrentLineId) {
+                const currentLine = previewList.querySelector('.preview-line.current');
+                if (currentLine) {
+                    // Use setTimeout to ensure DOM is ready
+                    setTimeout(() => {
+                        currentLine.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                    }, 10);
+                }
             }
         }
 
@@ -1111,6 +1214,8 @@
                 renderSyncer();
             } else if (tabId === 'preview') {
                 updateLyricsFromTextarea();
+                // Initialize current line ID tracking
+                previewList.dataset.currentLineId = '';
                 renderPreview();
             } else if (tabId === 'lyric') {
                 updateTextareaFromLyrics();
